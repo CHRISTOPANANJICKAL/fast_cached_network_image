@@ -1,9 +1,7 @@
 name: fast_cached_network_image
 description: A flutter package to cache network image fastly without native dependencies.
 version: 0.0.1
-authors:
-  - christopananjickal01@gmail.com
-homepage:
+homepage: https://github.com/CHRISTOPANANJICKAL/fast_cached_network_image
 
 environment:
   sdk: '>=2.18.0 <3.0.0'
