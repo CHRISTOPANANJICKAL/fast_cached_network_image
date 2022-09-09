@@ -161,7 +161,7 @@ class FastCachedImageConfig {
   static Box? _box;
 
   ///[init] function initializes the cache management system.
-  ///the path param must be a valid location such as temporary directory in android.
+  ///The path param must be a valid location such as temporary directory in android.
   ///[clearCacheAfter] property is used to set a  duration after which the cache will be cleared.
   ///Default value of [clearCacheAfter] is 7 days which means if [clearCacheAfter] is set to null, an image cached today will be cleared when you open the app after 7 days from now.
 
