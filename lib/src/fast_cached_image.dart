@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:fast_cached_network_image/src/models/image_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
@@ -159,19 +160,35 @@ class _ImageResponse {
 class FastCachedImageConfig {
   static Box? _box;
 
-  static Future<void> init({required String path}) async {
+  static Future<void> init({required String path, Duration? clearCacheAfter}) async {
+    if (path.isEmpty) throw Exception('Image storage location path cannot be empty');
+
+    clearCacheAfter ??= const Duration(days: 7);
+
     Hive.init(path);
     _box = await Hive.openBox('FastCachedImageStorageBox');
+    await _clearOldCache(clearCacheAfter);
   }
 
   static Future<Uint8List?> _getImage(String url) async {
     if (_box!.keys.contains(url)) {
-      return await _box!.get(url);
+      ImageModel model = ImageModel.fromJson(await _box!.get(url));
+      return model.data;
     }
     return null;
   }
 
   static Future<void> _saveImage(String url, Uint8List image) async {
-    await _box!.put(url, image);
+    await _box!.put(url, ImageModel(date: DateTime.now(), data: image).toJson());
+  }
+
+  static Future<void> _clearOldCache(Duration cleatCacheAfter) async {
+    DateTime today = DateTime.now();
+
+    for (final key in _box!.keys) {
+      ImageModel model = ImageModel.fromJson(await _box!.get(key));
+
+      if (today.difference(model.date) > cleatCacheAfter) await _box!.delete(key);
+    }
   }
 }
