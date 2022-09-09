@@ -1,15 +1,15 @@
 import 'dart:typed_data';
 
-class ImageModel {
-  ImageModel({required this.dateCreated, required this.data});
+class FastCacheImageModel {
+  FastCacheImageModel({required this.dateCreated, required this.data});
 
   DateTime dateCreated;
   Uint8List data;
 
-  factory ImageModel.fromJson(dynamic json) {
+  factory FastCacheImageModel.fromJson(dynamic json) {
     Map<String, dynamic> jsonConverted = Map<String, dynamic>.from(json);
 
-    return ImageModel(
+    return FastCacheImageModel(
       dateCreated: jsonConverted["date"],
       data: Uint8List.fromList(List<int>.from(jsonConverted["data"])),
     );

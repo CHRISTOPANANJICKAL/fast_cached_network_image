@@ -177,21 +177,21 @@ class FastCachedImageConfig {
 
   static Future<Uint8List?> _getImage(String url) async {
     if (_box!.keys.contains(url)) {
-      ImageModel model = ImageModel.fromJson(await _box!.get(url));
+      FastCacheImageModel model = FastCacheImageModel.fromJson(await _box!.get(url));
       return model.data;
     }
     return null;
   }
 
   static Future<void> _saveImage(String url, Uint8List image) async {
-    await _box!.put(url, ImageModel(dateCreated: DateTime.now(), data: image).toJson());
+    await _box!.put(url, FastCacheImageModel(dateCreated: DateTime.now(), data: image).toJson());
   }
 
   static Future<void> _clearOldCache(Duration cleatCacheAfter) async {
     DateTime today = DateTime.now();
 
     for (final key in _box!.keys) {
-      ImageModel model = ImageModel.fromJson(await _box!.get(key));
+      FastCacheImageModel model = FastCacheImageModel.fromJson(await _box!.get(key));
 
       if (today.difference(model.dateCreated) > cleatCacheAfter) await _box!.delete(key);
     }
