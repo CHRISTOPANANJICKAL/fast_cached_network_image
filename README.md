@@ -49,9 +49,9 @@ loadingBuilder: (context) {
           return Container(color: Colors.red, height: 100, width: 100);
         },
 ```
-loadingBuilder property can be used to display a loading widget such as a shimmer. This widget will be displaed while the image is being downloaded and processed.
+loadingBuilder property can be used to display a loading widget such as a shimmer. This widget will be displaed while the image is being downloaded and processed. 
 
-FastCachedImage have all other default properties such as height, width etc. provided by flutter.
+FastCachedImage have all other default properties such as height, width etc. provided by flutter. 
 
 
 ## Example
