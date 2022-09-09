@@ -165,8 +165,6 @@ class FastCachedImageConfig {
   ///[clearCacheAfter] property is used to set a  duration after which the cache will be cleared.
   ///Default value of [clearCacheAfter] is 7 days which means if [clearCacheAfter] is set to null, an image cached today will be cleared when you open the app after 7 days from now.
 
-
-
   static Future<void> init({required String path, Duration? clearCacheAfter}) async {
     if (path.isEmpty) throw Exception('Image storage location path cannot be empty');
 
