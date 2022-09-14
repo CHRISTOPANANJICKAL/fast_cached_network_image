@@ -31,9 +31,9 @@ class _MyAppState extends State<MyApp> {
       child: FastCachedImage(
         url: url1,
         fit: BoxFit.cover,
-        fadeInDuration: const Duration(milliseconds: 550),
-        errorBuilder: (context, _, e) {
-          return Text(e.toString());
+        fadeInDuration: const Duration(seconds: 1),
+        errorBuilder: (context, exception, stacktrace) {
+          return Text(exception.toString());
         },
         loadingBuilder: (context) {
           return Container(color: Colors.grey);
