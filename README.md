@@ -28,7 +28,7 @@ Initialize the cache configuration
 ```dart
 await FastCachedImageConfig.init(path: storageLocation, clearCacheAfter: const Duration(days: 15));
 ```
-The clearCacheAfter property is used to set the Duration after with the cached image will be cleated. By default its set to 7 days, which means an image cached today will be deleted when you open the app after 7 days.
+The clearCacheAfter property is used to set the Duration after with the cached image will be cleared. By default its set to 7 days, which means an image cached today will be deleted when you open the app after 7 days.
 
 Use it as a Widget
 
@@ -42,14 +42,14 @@ errorBuilder: (context, param, e) {
           return Text(e.toString());
         },
 ```
-errorBuilder property needs to return a widget. This widget will be displayed if there is any error while loading the provided iamge.
+errorBuilder property needs to return a widget. This widget will be displayed if there is any error while loading the provided image.
 ``` dart
 
 loadingBuilder: (context) {
           return Container(color: Colors.red, height: 100, width: 100);
         },
 ```
-loadingBuilder property can be used to display a loading widget such as a shimmer. This widget will be displaed while the image is being downloaded and processed. 
+loadingBuilder property can be used to display a loading widget such as a shimmer. This widget will be displayed while the image is being downloaded and processed. 
 
 FastCachedImage have all other default properties such as height, width etc. provided by flutter. 
 
