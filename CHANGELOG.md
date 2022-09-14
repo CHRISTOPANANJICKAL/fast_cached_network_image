@@ -14,3 +14,4 @@
 ## 0.0.4
 
 * Added fade in and out transitions while displaying the image
+* Added error logging
