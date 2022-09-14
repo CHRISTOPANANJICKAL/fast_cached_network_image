@@ -162,8 +162,6 @@ import 'package:hive/hive.dart';
 ///
 /// Anti-aliasing alleviates the sawtooth artifact when the image is rotated.
 
-
-
 class FastCachedImage extends StatefulWidget {
   final String url;
   final ImageErrorWidgetBuilder? errorBuilder;
@@ -403,7 +401,6 @@ class _ImageResponse {
 
 class FastCachedImageConfig {
   static Box? _box;
-
 
   static Future<void> init({required String path, Duration? clearCacheAfter}) async {
     if (path.isEmpty) {
