@@ -18,21 +18,27 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String url = 'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885__480.jpg';
+  String url1 = 'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885__480.jpg';
+  bool showImage = false;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
         home: Scaffold(
-      body: FastCachedImage(
-        url: url,
+            body: SizedBox(
+      height: 350,
+      width: 350,
+      child: FastCachedImage(
+        url: url1,
+        fit: BoxFit.cover,
+        fadeInDuration: const Duration(milliseconds: 550),
         errorBuilder: (context, _, e) {
           return Text(e.toString());
         },
         loadingBuilder: (context) {
-          return Container(color: Colors.red, height: 100, width: 100);
+          return Container(color: Colors.grey);
         },
       ),
-    ));
+    )));
   }
 }
