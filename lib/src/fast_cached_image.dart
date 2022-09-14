@@ -84,8 +84,8 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
 
   @override
   void dispose() {
+    animationController.removeListener(() => {});
     animationController.dispose();
-
     super.dispose();
   }
 
