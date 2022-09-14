@@ -26,6 +26,7 @@ class FastCachedImage extends StatefulWidget {
   final String? semanticLabel;
   final bool excludeFromSemantics;
   final bool isAntiAlias;
+  final bool disableErrorLogs;
 
   const FastCachedImage(
       {required this.url,
@@ -34,6 +35,7 @@ class FastCachedImage extends StatefulWidget {
       this.semanticLabel,
       this.loadingBuilder,
       this.excludeFromSemantics = false,
+      this.disableErrorLogs = false,
       this.width,
       this.height,
       this.color,
@@ -68,22 +70,29 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
     animation =
         Tween<double>(begin: widget.fadeInDuration == Duration.zero ? 1 : 0, end: 1).animate(animationController);
 
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) => _loadAsync(widget.url));
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      _loadAsync(widget.url);
+      animationController.addStatusListener((status) => _animationListener(status));
+    });
 
-    animationController
-        .addStatusListener((status) => (status == AnimationStatus.completed) ? setState(() => {}) : null);
     super.initState();
+  }
+
+  void _animationListener(AnimationStatus status) {
+    if (status == AnimationStatus.completed && mounted && widget.fadeInDuration != Duration.zero) setState(() => {});
   }
 
   @override
   void dispose() {
     animationController.dispose();
+
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     if (imageResponse?.error != null && widget.errorBuilder != null) {
+      _logErrors(imageResponse?.error);
       return widget.errorBuilder!(context, Object, StackTrace.fromString(imageResponse!.error!));
     }
 
@@ -105,7 +114,14 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
                 alignment: widget.alignment,
                 key: widget.key,
                 fit: widget.fit,
-                errorBuilder: widget.errorBuilder,
+                errorBuilder: (a, c, v) {
+                  if (animationController.status != AnimationStatus.completed) {
+                    animationController.forward();
+                    _logErrors(c);
+                    FastCachedImageConfig._deleteImage(widget.url);
+                  }
+                  return widget.errorBuilder != null ? widget.errorBuilder!(a, c, v) : const SizedBox();
+                },
                 centerSlice: widget.centerSlice,
                 colorBlendMode: widget.colorBlendMode,
                 excludeFromSemantics: widget.excludeFromSemantics,
@@ -203,6 +219,10 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
       if (!chunkEvents.isClosed) await chunkEvents.close();
     }
   }
+
+  void _logErrors(dynamic object) {
+    if (!widget.disableErrorLogs) debugPrint('$object - Image url : ${widget.url}');
+  }
 }
 
 class _ImageResponse {
@@ -249,5 +269,9 @@ class FastCachedImageConfig {
 
       if (today.difference(model.dateCreated) > cleatCacheAfter) await _box!.delete(key);
     }
+  }
+
+  static Future<void> _deleteImage(String url) async {
+    if (_box!.keys.contains(url)) await _box!.delete(url);
   }
 }
