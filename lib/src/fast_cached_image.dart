@@ -49,7 +49,7 @@ class FastCachedImage extends StatefulWidget {
       this.gaplessPlayback = false,
       this.isAntiAlias = false,
       this.filterQuality = FilterQuality.low,
-      this.fadeInDuration = const Duration(milliseconds: 750),
+      this.fadeInDuration = const Duration(milliseconds: 500),
       int? cacheWidth,
       int? cacheHeight,
       Key? key})
