@@ -1,7 +1,7 @@
 
 # Fast Cached Network Image
 
-A flutter package to cache network image fastly without native dependencies.
+A flutter package to cache network image fastly without native dependencies, with loader, error builder, and smooth fade transitions.
 
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://pub.dev/packages/fast_cached_network_image)
@@ -10,10 +10,15 @@ A flutter package to cache network image fastly without native dependencies.
 
 ## Screenshots
 
-![App Screenshot](https://github.com/CHRISTOPANANJICKAL/fast_cached_network_image/blob/main/fast-cache.gif)
+![App caching](https://github.com/CHRISTOPANANJICKAL/fast_cached_network_image/blob/main/fast-cache.gif)
+
+![Caching with fade in animation](https://github.com/CHRISTOPANANJICKAL/fast_cached_network_image/blob/main/images-in-row.gif)
+
+The below gif displays a 30 MB image from cache. Use [shimmer](https://pub.dev/packages/shimmer) package to create a beautiful loading widget.
+![Loading a large cached imaged file](https://github.com/CHRISTOPANANJICKAL/fast_cached_network_image/blob/main/image-with-shimmer.gif)
 
 ## Usage
-Depent on it
+Depend on it
 ```dart
 import 'package:fast_cached_network_image/fast_cached_network_image.dart';
 ```
@@ -38,8 +43,8 @@ child: FastCachedImage(url: url)
 
 ## Properties
 ``` dart
-errorBuilder: (context, param, e) {
-          return Text(e.toString());
+errorBuilder: (context, exception, stacktrace) {
+          return Text(exception.toString());
         },
 ```
 errorBuilder property needs to return a widget. This widget will be displayed if there is any error while loading the provided image.
@@ -49,24 +54,29 @@ loadingBuilder: (context) {
           return Container(color: Colors.red, height: 100, width: 100);
         },
 ```
-loadingBuilder property can be used to display a loading widget such as a shimmer. This widget will be displayed while the image is being downloaded and processed. 
+loadingBuilder property can be used to display a loading widget such as a shimmer. This widget will be displayed while the image is being downloaded and processed.
 
-FastCachedImage have all other default properties such as height, width etc. provided by flutter. 
+```dart
+fadeInDuration: const Duration(seconds: 1)
+```
+fadeInDuration property can be use to set the fadeInDuration between the loadingBuilder and the image. Default duration is 500 milliseconds
+
+If an image had some errors while displaying, the image will be automatically re - downloaded when the image is requested again.
+
+FastCachedImage have all other default properties such as height, width etc. provided by flutter.
 
 
 ## Example
 
 ```dart
 
-import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:fast_cached_network_image/fast_cached_network_image.dart';
-
+import 'package:flutter/material.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-   String storageLocation = (await getApplicationDocumentsDirectory()).path;
+  String storageLocation = 'E:/fast';
   await FastCachedImageConfig.init(path: storageLocation, clearCacheAfter: const Duration(days: 15));
 
   runApp(const MyApp());
@@ -80,24 +90,33 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String url = 'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885__480.jpg';
+  String url1 = 'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885__480.jpg';
+
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
         home: Scaffold(
-      body: FastCachedImage(
-        url: url,
-        errorBuilder: (context, param, e) {
-          return Text(e.toString());
+            body: SizedBox(
+      height: 350,
+      width: 350,
+      child: FastCachedImage(
+        url: url1,
+        fit: BoxFit.cover,
+        fadeInDuration: const Duration(seconds: 1),
+        errorBuilder: (context, exception, stacktrace) {
+          return Text(exception.toString());
         },
         loadingBuilder: (context) {
-          return Container(color: Colors.red, height: 100, width: 100);
+          return Container(color: Colors.grey);
         },
       ),
-    ));
+    )));
   }
 }
+```
 
+## Package on pub.dev
 
+[fast_cached_network_image](https://pub.dev/packages/fast_cached_network_image)
 
