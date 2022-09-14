@@ -59,27 +59,33 @@ class FastCachedImage extends StatefulWidget {
   State<FastCachedImage> createState() => _FastCachedImageState();
 }
 
-class _FastCachedImageState extends State<FastCachedImage> with TickerProviderStateMixin {
+class _FastCachedImageState extends State<FastCachedImage>
+    with TickerProviderStateMixin {
   _ImageResponse? imageResponse;
 
   late Animation<double> animation;
   late AnimationController animationController;
   @override
   void initState() {
-    animationController = AnimationController(vsync: this, duration: widget.fadeInDuration);
-    animation =
-        Tween<double>(begin: widget.fadeInDuration == Duration.zero ? 1 : 0, end: 1).animate(animationController);
+    animationController =
+        AnimationController(vsync: this, duration: widget.fadeInDuration);
+    animation = Tween<double>(
+            begin: widget.fadeInDuration == Duration.zero ? 1 : 0, end: 1)
+        .animate(animationController);
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       _loadAsync(widget.url);
-      animationController.addStatusListener((status) => _animationListener(status));
+      animationController
+          .addStatusListener((status) => _animationListener(status));
     });
 
     super.initState();
   }
 
   void _animationListener(AnimationStatus status) {
-    if (status == AnimationStatus.completed && mounted && widget.fadeInDuration != Duration.zero) setState(() => {});
+    if (status == AnimationStatus.completed &&
+        mounted &&
+        widget.fadeInDuration != Duration.zero) setState(() => {});
   }
 
   @override
@@ -93,7 +99,8 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
   Widget build(BuildContext context) {
     if (imageResponse?.error != null && widget.errorBuilder != null) {
       _logErrors(imageResponse?.error);
-      return widget.errorBuilder!(context, Object, StackTrace.fromString(imageResponse!.error!));
+      return widget.errorBuilder!(
+          context, Object, StackTrace.fromString(imageResponse!.error!));
     }
 
     return SizedBox(
@@ -102,7 +109,9 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
         fit: StackFit.passthrough,
         children: [
           if (animationController.status != AnimationStatus.completed)
-            (widget.loadingBuilder != null) ? widget.loadingBuilder!(context) : const SizedBox(),
+            (widget.loadingBuilder != null)
+                ? widget.loadingBuilder!(context)
+                : const SizedBox(),
           if (imageResponse != null)
             FadeTransition(
               opacity: animation,
@@ -120,7 +129,9 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
                     _logErrors(c);
                     FastCachedImageConfig._deleteImage(widget.url);
                   }
-                  return widget.errorBuilder != null ? widget.errorBuilder!(a, c, v) : const SizedBox();
+                  return widget.errorBuilder != null
+                      ? widget.errorBuilder!(a, c, v)
+                      : const SizedBox();
                 },
                 centerSlice: widget.centerSlice,
                 colorBlendMode: widget.colorBlendMode,
@@ -139,7 +150,8 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
                           return widget.loadingBuilder!(context);
                         }
 
-                        if (animationController.status != AnimationStatus.completed) {
+                        if (animationController.status !=
+                            AnimationStatus.completed) {
                           animationController.forward();
                         }
                         return a;
@@ -153,7 +165,8 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
   }
 
   Future<void> _loadAsync(url) async {
-    if (FastCachedImageConfig._box == null || !FastCachedImageConfig._box!.isOpen) {
+    if (FastCachedImageConfig._box == null ||
+        !FastCachedImageConfig._box!.isOpen) {
       throw Exception(
           'FastCachedImage is not initialized. Please use FastCachedImageConfig.init to initialize FastCachedImage');
     }
@@ -163,7 +176,8 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
     if (!mounted) return;
 
     if (image != null) {
-      setState(() => imageResponse = _ImageResponse(imageData: image, error: null));
+      setState(
+          () => imageResponse = _ImageResponse(imageData: image, error: null));
       if (widget.loadingBuilder == null) animationController.forward();
 
       return;
@@ -184,8 +198,12 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
       final HttpClientResponse response = await request.close();
       if (response.statusCode != HttpStatus.ok) {
         await response.drain<List<int>>(<int>[]);
-        String error = NetworkImageLoadException(statusCode: response.statusCode, uri: resolved).toString();
-        if (mounted) setState(() => imageResponse = _ImageResponse(imageData: Uint8List.fromList([]), error: error));
+        String error = NetworkImageLoadException(
+                statusCode: response.statusCode, uri: resolved)
+            .toString();
+        if (mounted)
+          setState(() => imageResponse =
+              _ImageResponse(imageData: Uint8List.fromList([]), error: error));
         return;
       }
 
@@ -202,18 +220,21 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
       );
 
       if (bytes.isEmpty && mounted) {
-        setState(() => imageResponse = _ImageResponse(imageData: bytes, error: 'Image is empty.'));
+        setState(() => imageResponse =
+            _ImageResponse(imageData: bytes, error: 'Image is empty.'));
         return;
       }
       if (mounted) {
-        setState(() => imageResponse = _ImageResponse(imageData: bytes, error: null));
+        setState(() =>
+            imageResponse = _ImageResponse(imageData: bytes, error: null));
         if (widget.loadingBuilder == null) animationController.forward();
       }
 
       await FastCachedImageConfig._saveImage(url, bytes);
     } catch (e) {
       if (mounted) {
-        setState(() => imageResponse = _ImageResponse(imageData: Uint8List.fromList([]), error: e.toString()));
+        setState(() => imageResponse = _ImageResponse(
+            imageData: Uint8List.fromList([]), error: e.toString()));
       }
     } finally {
       if (!chunkEvents.isClosed) await chunkEvents.close();
@@ -221,7 +242,8 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
   }
 
   void _logErrors(dynamic object) {
-    if (!widget.disableErrorLogs) debugPrint('$object - Image url : ${widget.url}');
+    if (!widget.disableErrorLogs)
+      debugPrint('$object - Image url : ${widget.url}');
   }
 }
 
@@ -239,8 +261,10 @@ class FastCachedImageConfig {
   ///[clearCacheAfter] property is used to set a  duration after which the cache will be cleared.
   ///Default value of [clearCacheAfter] is 7 days which means if [clearCacheAfter] is set to null, an image cached today will be cleared when you open the app after 7 days from now.
 
-  static Future<void> init({required String path, Duration? clearCacheAfter}) async {
-    if (path.isEmpty) throw Exception('Image storage location path cannot be empty');
+  static Future<void> init(
+      {required String path, Duration? clearCacheAfter}) async {
+    if (path.isEmpty)
+      throw Exception('Image storage location path cannot be empty');
 
     clearCacheAfter ??= const Duration(days: 7);
 
@@ -251,23 +275,27 @@ class FastCachedImageConfig {
 
   static Future<Uint8List?> _getImage(String url) async {
     if (_box!.keys.contains(url)) {
-      FastCacheImageModel model = FastCacheImageModel.fromJson(await _box!.get(url));
+      FastCacheImageModel model =
+          FastCacheImageModel.fromJson(await _box!.get(url));
       return model.data;
     }
     return null;
   }
 
   static Future<void> _saveImage(String url, Uint8List image) async {
-    await _box!.put(url, FastCacheImageModel(dateCreated: DateTime.now(), data: image).toJson());
+    await _box!.put(url,
+        FastCacheImageModel(dateCreated: DateTime.now(), data: image).toJson());
   }
 
   static Future<void> _clearOldCache(Duration cleatCacheAfter) async {
     DateTime today = DateTime.now();
 
     for (final key in _box!.keys) {
-      FastCacheImageModel model = FastCacheImageModel.fromJson(await _box!.get(key));
+      FastCacheImageModel model =
+          FastCacheImageModel.fromJson(await _box!.get(key));
 
-      if (today.difference(model.dateCreated) > cleatCacheAfter) await _box!.delete(key);
+      if (today.difference(model.dateCreated) > cleatCacheAfter)
+        await _box!.delete(key);
     }
   }
 

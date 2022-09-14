@@ -15,5 +15,6 @@ class FastCacheImageModel {
     );
   }
 
-  Map<String, dynamic> toJson() => {"date": dateCreated, "data": List<dynamic>.from(data.map((x) => x))};
+  Map<String, dynamic> toJson() =>
+      {"date": dateCreated, "data": List<dynamic>.from(data.map((x) => x))};
 }
