@@ -10,3 +10,7 @@
 ## 0.0.3
 
 * MIT License updated
+
+## 0.0.4
+
+* Added fade in and out transitions while displaying the image
