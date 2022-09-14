@@ -9,6 +9,7 @@ class FastCachedImage extends StatefulWidget {
   final String url;
   final ImageErrorWidgetBuilder? errorBuilder;
   final Widget Function(BuildContext)? loadingBuilder;
+  final Duration fadeInDuration;
   final double? width;
   final double? height;
   final double scale;
@@ -46,6 +47,7 @@ class FastCachedImage extends StatefulWidget {
       this.gaplessPlayback = false,
       this.isAntiAlias = false,
       this.filterQuality = FilterQuality.low,
+      this.fadeInDuration = const Duration(milliseconds: 750),
       int? cacheWidth,
       int? cacheHeight,
       Key? key})
@@ -55,42 +57,82 @@ class FastCachedImage extends StatefulWidget {
   State<FastCachedImage> createState() => _FastCachedImageState();
 }
 
-class _FastCachedImageState extends State<FastCachedImage> {
+class _FastCachedImageState extends State<FastCachedImage> with TickerProviderStateMixin {
   _ImageResponse? imageResponse;
+
+  late Animation<double> animation;
+  late AnimationController animationController;
   @override
   void initState() {
+    animationController = AnimationController(vsync: this, duration: widget.fadeInDuration);
+    animation =
+        Tween<double>(begin: widget.fadeInDuration == Duration.zero ? 1 : 0, end: 1).animate(animationController);
+
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) => _loadAsync(widget.url));
+
+    animationController
+        .addStatusListener((status) => (status == AnimationStatus.completed) ? setState(() => {}) : null);
     super.initState();
   }
 
   @override
+  void dispose() {
+    animationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (imageResponse == null) {
-      return (widget.loadingBuilder != null) ? widget.loadingBuilder!(context) : const SizedBox();
-    }
-    if (imageResponse!.error != null && widget.errorBuilder != null) {
+    if (imageResponse?.error != null && widget.errorBuilder != null) {
       return widget.errorBuilder!(context, Object, StackTrace.fromString(imageResponse!.error!));
     }
-    return Image.memory(
-      imageResponse!.imageData,
-      color: widget.color,
-      width: widget.width,
-      height: widget.height,
-      alignment: widget.alignment,
-      key: widget.key,
-      fit: widget.fit,
-      errorBuilder: widget.errorBuilder,
-      centerSlice: widget.centerSlice,
-      colorBlendMode: widget.colorBlendMode,
-      excludeFromSemantics: widget.excludeFromSemantics,
-      filterQuality: widget.filterQuality,
-      gaplessPlayback: widget.gaplessPlayback,
-      isAntiAlias: widget.isAntiAlias,
-      matchTextDirection: widget.matchTextDirection,
-      opacity: widget.opacity,
-      repeat: widget.repeat,
-      scale: widget.scale,
-      semanticLabel: widget.semanticLabel,
+
+    return SizedBox(
+      child: Stack(
+        alignment: Alignment.center,
+        fit: StackFit.passthrough,
+        children: [
+          if (animationController.status != AnimationStatus.completed)
+            (widget.loadingBuilder != null) ? widget.loadingBuilder!(context) : const SizedBox(),
+          if (imageResponse != null)
+            FadeTransition(
+              opacity: animation,
+              child: Image.memory(
+                imageResponse!.imageData,
+                color: widget.color,
+                width: widget.width,
+                height: widget.height,
+                alignment: widget.alignment,
+                key: widget.key,
+                fit: widget.fit,
+                errorBuilder: widget.errorBuilder,
+                centerSlice: widget.centerSlice,
+                colorBlendMode: widget.colorBlendMode,
+                excludeFromSemantics: widget.excludeFromSemantics,
+                filterQuality: widget.filterQuality,
+                gaplessPlayback: widget.gaplessPlayback,
+                isAntiAlias: widget.isAntiAlias,
+                matchTextDirection: widget.matchTextDirection,
+                opacity: widget.opacity,
+                repeat: widget.repeat,
+                scale: widget.scale,
+                semanticLabel: widget.semanticLabel,
+                frameBuilder: widget.loadingBuilder != null
+                    ? (context, a, b, c) {
+                        if (b == null) {
+                          return widget.loadingBuilder!(context);
+                        }
+
+                        if (animationController.status != AnimationStatus.completed) {
+                          animationController.forward();
+                        }
+                        return a;
+                      }
+                    : null,
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -101,8 +143,13 @@ class _FastCachedImageState extends State<FastCachedImage> {
     }
 
     Uint8List? image = await FastCachedImageConfig._getImage(url);
+
+    if (!mounted) return;
+
     if (image != null) {
       setState(() => imageResponse = _ImageResponse(imageData: image, error: null));
+      if (widget.loadingBuilder == null) animationController.forward();
+
       return;
     }
 
@@ -122,9 +169,11 @@ class _FastCachedImageState extends State<FastCachedImage> {
       if (response.statusCode != HttpStatus.ok) {
         await response.drain<List<int>>(<int>[]);
         String error = NetworkImageLoadException(statusCode: response.statusCode, uri: resolved).toString();
-        setState(() => imageResponse = _ImageResponse(imageData: Uint8List.fromList([]), error: error));
+        if (mounted) setState(() => imageResponse = _ImageResponse(imageData: Uint8List.fromList([]), error: error));
         return;
       }
+
+      if (!mounted) return;
 
       final Uint8List bytes = await consolidateHttpClientResponseBytes(
         response,
@@ -136,15 +185,20 @@ class _FastCachedImageState extends State<FastCachedImage> {
         },
       );
 
-      if (bytes.isEmpty) {
+      if (bytes.isEmpty && mounted) {
         setState(() => imageResponse = _ImageResponse(imageData: bytes, error: 'Image is empty.'));
         return;
       }
+      if (mounted) {
+        setState(() => imageResponse = _ImageResponse(imageData: bytes, error: null));
+        if (widget.loadingBuilder == null) animationController.forward();
+      }
 
-      setState(() => imageResponse = _ImageResponse(imageData: bytes, error: null));
       await FastCachedImageConfig._saveImage(url, bytes);
     } catch (e) {
-      setState(() => imageResponse = _ImageResponse(imageData: Uint8List.fromList([]), error: e.toString()));
+      if (mounted) {
+        setState(() => imageResponse = _ImageResponse(imageData: Uint8List.fromList([]), error: e.toString()));
+      }
     } finally {
       if (!chunkEvents.isClosed) await chunkEvents.close();
     }
