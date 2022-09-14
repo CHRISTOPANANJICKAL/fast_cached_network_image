@@ -19,7 +19,6 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String url1 = 'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885__480.jpg';
-  bool showImage = false;
 
   @override
   Widget build(BuildContext context) {
