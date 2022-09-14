@@ -201,9 +201,10 @@ class _FastCachedImageState extends State<FastCachedImage>
         String error = NetworkImageLoadException(
                 statusCode: response.statusCode, uri: resolved)
             .toString();
-        if (mounted)
+        if (mounted) {
           setState(() => imageResponse =
               _ImageResponse(imageData: Uint8List.fromList([]), error: error));
+        }
         return;
       }
 
@@ -242,8 +243,9 @@ class _FastCachedImageState extends State<FastCachedImage>
   }
 
   void _logErrors(dynamic object) {
-    if (!widget.disableErrorLogs)
+    if (!widget.disableErrorLogs) {
       debugPrint('$object - Image url : ${widget.url}');
+    }
   }
 }
 
@@ -263,8 +265,9 @@ class FastCachedImageConfig {
 
   static Future<void> init(
       {required String path, Duration? clearCacheAfter}) async {
-    if (path.isEmpty)
+    if (path.isEmpty) {
       throw Exception('Image storage location path cannot be empty');
+    }
 
     clearCacheAfter ??= const Duration(days: 7);
 
@@ -294,8 +297,9 @@ class FastCachedImageConfig {
       FastCacheImageModel model =
           FastCacheImageModel.fromJson(await _box!.get(key));
 
-      if (today.difference(model.dateCreated) > cleatCacheAfter)
+      if (today.difference(model.dateCreated) > cleatCacheAfter) {
         await _box!.delete(key);
+      }
     }
   }
 
