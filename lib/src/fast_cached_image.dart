@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:fast_cached_network_image/src/models/image_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 ///[FastCachedImage] creates a widget to display network images. This widget downloads the network image
 ///when this widget is build for the first time. Later whenever this widget is called the image will be displayed from
@@ -424,13 +424,13 @@ class FastCachedImageConfig {
 
   static Future<void> init(
       {required String path, Duration? clearCacheAfter}) async {
-    if (path.isEmpty) {
+    if (!kIsWeb && path.isEmpty) {
       throw Exception('Image storage location path cannot be empty');
     }
 
     clearCacheAfter ??= const Duration(days: 7);
 
-    Hive.init(path);
+    Hive.initFlutter(path);
     _box = await Hive.openBox('FastCachedImageStorageBox');
     await _clearOldCache(clearCacheAfter);
   }
