@@ -4,6 +4,7 @@ import 'package:fast_cached_network_image/src/models/image_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:http/http.dart' as http;
 
 ///[FastCachedImage] creates a widget to display network images. This widget downloads the network image
 ///when this widget is build for the first time. Later whenever this widget is called the image will be displayed from
@@ -344,17 +345,14 @@ class _FastCachedImageState extends State<FastCachedImage>
 
     try {
       final Uri resolved = Uri.base.resolve(url);
-      HttpClient httpClient = HttpClient();
 
-      final HttpClientRequest request = await httpClient.getUrl(resolved);
+      var response = await http.get(resolved);
 
       // headers?.forEach((String name, String value) {
       //   request.headers.add(name, value);
       // });
 
-      final HttpClientResponse response = await request.close();
       if (response.statusCode != HttpStatus.ok) {
-        await response.drain<List<int>>(<int>[]);
         String error = NetworkImageLoadException(
                 statusCode: response.statusCode, uri: resolved)
             .toString();
@@ -367,15 +365,7 @@ class _FastCachedImageState extends State<FastCachedImage>
 
       if (!mounted) return;
 
-      final Uint8List bytes = await consolidateHttpClientResponseBytes(
-        response,
-        onBytesReceived: (int cumulative, int? total) {
-          chunkEvents.add(ImageChunkEvent(
-            cumulativeBytesLoaded: cumulative,
-            expectedTotalBytes: total,
-          ));
-        },
-      );
+      final Uint8List bytes = response.bodyBytes;
 
       if (bytes.isEmpty && mounted) {
         setState(() => imageResponse =
