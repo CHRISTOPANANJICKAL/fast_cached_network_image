@@ -393,7 +393,7 @@ class _ImageResponse {
 }
 
 ///[FastCachedImageConfig] is the class to set the configurations.
-///[init] function initializes the cache management system.
+///[init] function initializes the cache management system. Use this code only once in the app in main to avoid errors.
 ///The path param must be a valid location such as temporary directory in android.
 ///[clearCacheAfter] property is used to set a  duration after which the cache will be cleared.
 ///Default value of [clearCacheAfter] is 7 days which means if [clearCacheAfter] is set to null,
@@ -401,8 +401,11 @@ class _ImageResponse {
 
 class FastCachedImageConfig {
   static Box? _box;
+  static bool _isInitialized = false;
 
   static Future<void> init({required String path, Duration? clearCacheAfter}) async {
+    if (_isInitialized) return;
+
     if (path.isEmpty) {
       throw Exception('Image storage location path cannot be empty');
     }
@@ -410,6 +413,8 @@ class FastCachedImageConfig {
     clearCacheAfter ??= const Duration(days: 7);
 
     Hive.init(path);
+    _isInitialized = true;
+
     _box = await Hive.openBox('FastCachedImageStorageBox');
     await _clearOldCache(clearCacheAfter);
   }

@@ -6,6 +6,7 @@ void main() async {
 
   String storageLocation = 'E:/fast';
   await FastCachedImageConfig.init(path: storageLocation, clearCacheAfter: const Duration(days: 15));
+  await FastCachedImageConfig.init(path: storageLocation, clearCacheAfter: const Duration(days: 15));
 
   runApp(const MyApp());
 }
