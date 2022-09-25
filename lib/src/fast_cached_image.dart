@@ -441,19 +441,19 @@ class FastCachedImageConfig {
 
   ///[clearCachedImage] function takes in a image [imageUrl] and removes the image corresponding to the url
   /// from the cache if the image is present in the cache.
-  static Future<void> clearCachedImage({required String imageUrl}) async {
+  static Future<void> clearCachedImage({required String imageUrl, bool showLog = true}) async {
     if (_box!.keys.contains(imageUrl)) {
       await _box!.delete(imageUrl);
-      debugPrint('FastCacheImage: Removed image $imageUrl from cache.');
+      if (showLog) debugPrint('FastCacheImage: Removed image $imageUrl from cache.');
     }
   }
 
   ///[clearAllCachedImages] function clears all cached images. This can be used in scenarios such as
   ///logout functionality of your app, so that all cached images corresponding to the user's account is removed.
-  static Future<void> clearAllCachedImages() async {
+  static Future<void> clearAllCachedImages({bool showLog = true}) async {
     _checkInit();
     await _box!.deleteFromDisk();
-    debugPrint('FastCacheImage: All cache cleared.');
+    if (showLog) debugPrint('FastCacheImage: All cache cleared.');
     _box = await Hive.openLazyBox('FastCachedImageStorageBox');
   }
 
