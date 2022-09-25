@@ -442,7 +442,10 @@ class FastCachedImageConfig {
   ///[clearCachedImage] function takes in a image [imageUrl] and removes the image corresponding to the url
   /// from the cache if the image is present in the cache.
   static Future<void> clearCachedImage({required String imageUrl}) async {
-    if (_box!.keys.contains(imageUrl)) await _box!.delete(imageUrl);
+    if (_box!.keys.contains(imageUrl)) {
+      await _box!.delete(imageUrl);
+      debugPrint('FastCacheImage: Removed image $imageUrl from cache.');
+    }
   }
 
   ///[clearAllCachedImages] function clears all cached images. This can be used in scenarios such as
@@ -450,6 +453,7 @@ class FastCachedImageConfig {
   static Future<void> clearAllCachedImages() async {
     _checkInit();
     await _box!.deleteFromDisk();
+    debugPrint('FastCacheImage: All cache cleared.');
     _box = await Hive.openLazyBox('FastCachedImageStorageBox');
   }
 
