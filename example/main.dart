@@ -6,7 +6,6 @@ void main() async {
 
   String storageLocation = 'E:/fast';
   await FastCachedImageConfig.init(path: storageLocation, clearCacheAfter: const Duration(days: 15));
-  await FastCachedImageConfig.init(path: storageLocation, clearCacheAfter: const Duration(days: 15));
 
   runApp(const MyApp());
 }
@@ -25,20 +24,28 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
         home: Scaffold(
-            body: SizedBox(
-      height: 350,
-      width: 350,
-      child: FastCachedImage(
-        url: url1,
-        fit: BoxFit.cover,
-        fadeInDuration: const Duration(seconds: 1),
-        errorBuilder: (context, exception, stacktrace) {
-          return Text(exception.toString());
-        },
-        loadingBuilder: (context) {
-          return Container(color: Colors.grey);
-        },
-      ),
+            body: Column(
+      children: [
+        SizedBox(
+          height: 350,
+          width: 350,
+          child: FastCachedImage(
+            url: url1,
+            fit: BoxFit.cover,
+            fadeInDuration: const Duration(seconds: 1),
+            errorBuilder: (context, exception, stacktrace) {
+              return Text(exception.toString());
+            },
+            loadingBuilder: (context) {
+              return Container(color: Colors.grey);
+            },
+          ),
+        ),
+        MaterialButton(
+          onPressed: () => FastCachedImageConfig.clearCachedImage(imageUrl: url1),
+          child: Text('delete'),
+        )
+      ],
     )));
   }
 }
