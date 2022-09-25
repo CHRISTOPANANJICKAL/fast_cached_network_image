@@ -462,4 +462,11 @@ class FastCachedImageConfig {
       throw Exception(_notInitMessage);
     }
   }
+
+  ///[isCached] returns a boolean indicating whether the given image is cached or not.
+  static bool isCached({required String imageUrl}) {
+    _checkInit();
+    if (_box!.containsKey(imageUrl)) return true;
+    return false;
+  }
 }
