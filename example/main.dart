@@ -5,8 +5,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   String storageLocation = 'E:/fast';
-  await FastCachedImageConfig.init(
-      path: storageLocation, clearCacheAfter: const Duration(days: 15));
+  await FastCachedImageConfig.init(path: storageLocation, clearCacheAfter: const Duration(days: 15));
 
   runApp(const MyApp());
 }
@@ -19,8 +18,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String url1 =
-      'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885__480.jpg';
+  String url1 = 'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885__480.jpg';
 
   @override
   Widget build(BuildContext context) {
