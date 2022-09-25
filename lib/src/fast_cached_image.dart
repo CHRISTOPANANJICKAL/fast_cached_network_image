@@ -275,7 +275,7 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
                   if (animationController.status != AnimationStatus.completed) {
                     animationController.forward();
                     _logErrors(c);
-                    FastCachedImageConfig._deleteImage(widget.url);
+                    FastCachedImageConfig.clearCachedImage(imageUrl: widget.url);
                   }
                   return widget.errorBuilder != null ? widget.errorBuilder!(a, c, v) : const SizedBox();
                 },
@@ -310,11 +310,7 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
   }
 
   Future<void> _loadAsync(url) async {
-    if (FastCachedImageConfig._box == null || !FastCachedImageConfig._box!.isOpen) {
-      throw Exception(
-          'FastCachedImage is not initialized. Please use FastCachedImageConfig.init to initialize FastCachedImage');
-    }
-
+    FastCachedImageConfig._checkInit();
     Uint8List? image = await FastCachedImageConfig._getImage(url);
 
     if (!mounted) return;
@@ -392,30 +388,30 @@ class _ImageResponse {
   _ImageResponse({required this.imageData, required this.error});
 }
 
-///[FastCachedImageConfig] is the class to set the configurations.
-///[init] function initializes the cache management system. Use this code only once in the app in main to avoid errors.
-///The path param must be a valid location such as temporary directory in android.
-///[clearCacheAfter] property is used to set a  duration after which the cache will be cleared.
-///Default value of [clearCacheAfter] is 7 days which means if [clearCacheAfter] is set to null,
-/// an image cached today will be cleared when you open the app after 7 days from now.
-
 class FastCachedImageConfig {
-  static Box? _box;
+  static LazyBox? _box;
   static bool _isInitialized = false;
+  static const String _notInitMessage =
+      'FastCachedImage is not initialized. Please use FastCachedImageConfig.init to initialize FastCachedImage';
 
+  ///[FastCachedImageConfig] is the class to manage and set the cache configurations.
+  ///[init] function initializes the cache management system. Use this code only once in the app in main to avoid errors.
+  ///The path param must be a valid location such as temporary directory in android.
+  ///[clearCacheAfter] property is used to set a  duration after which the cache will be cleared.
+  ///Default value of [clearCacheAfter] is 7 days which means if [clearCacheAfter] is set to null,
+  /// an image cached today will be cleared when you open the app after 7 days from now.
   static Future<void> init({required String path, Duration? clearCacheAfter}) async {
     if (_isInitialized) return;
 
     if (path.isEmpty) {
       throw Exception('Image storage location path cannot be empty');
     }
-
     clearCacheAfter ??= const Duration(days: 7);
 
     Hive.init(path);
     _isInitialized = true;
 
-    _box = await Hive.openBox('FastCachedImageStorageBox');
+    _box = await Hive.openLazyBox('FastCachedImageStorageBox');
     await _clearOldCache(clearCacheAfter);
   }
 
@@ -443,7 +439,23 @@ class FastCachedImageConfig {
     }
   }
 
-  static Future<void> _deleteImage(String url) async {
-    if (_box!.keys.contains(url)) await _box!.delete(url);
+  ///[clearCachedImage] function takes in a image [imageUrl] and removes the image corresponding to the url
+  /// from the cache if the image is present in the cache.
+  static Future<void> clearCachedImage({required String imageUrl}) async {
+    if (_box!.keys.contains(imageUrl)) await _box!.delete(imageUrl);
+  }
+
+  ///[clearAllCachedImages] function clears all cached images. This can be used in scenarios such as
+  ///logout functionality of your app, so that all cached images corresponding to the user's account is removed.
+  static Future<void> clearAllCachedImages() async {
+    _checkInit();
+    await _box!.deleteFromDisk();
+    _box = await Hive.openLazyBox('FastCachedImageStorageBox');
+  }
+
+  static _checkInit() {
+    if (FastCachedImageConfig._box == null || !FastCachedImageConfig._box!.isOpen) {
+      throw Exception(_notInitMessage);
+    }
   }
 }
