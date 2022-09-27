@@ -5,18 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 
-///[FastCachedImage] creates a widget to display network images. This widget downloads the network image
-///when this widget is build for the first time. Later whenever this widget is called the image will be displayed from
-///the downloaded database instead of the network. This can avoid unnecessary downloads and load images much faster.
-///Provide the [url] for the image to display.
-///[errorBuilder] must return a widget. This widget will be displayed if there is any error in downloading or displaying
-///the downloaded image
-///[loadingBuilder] must return a widget. This widget is shown when the image is being downloaded and processed
-///[fadeInDuration] can be adjusted to change the duration of the fade transition between the [loadingBuilder]
-///and the actual image. Default value is 500 ms.
-///[disableErrorLogs] can be set to true if you want to ignore error logs from the widget
-///
-///
 /// The underlying widget is [Image.memory]
 /// The `scale` argument specifies the linear scale factor for drawing this
 /// image at its intended size and applies to both the width and the height.
@@ -28,10 +16,7 @@ import 'package:hive/hive.dart';
 /// formats like rawRgba (the default format of [dart:ui.Image.toByteData])
 /// will lead to exceptions.
 ///
-/// Either the [width] and [height] arguments should be specified, or the
-/// widget should be placed in a context that sets tight layout constraints.
-/// Otherwise, the image dimensions will change as the image is loaded, which
-/// will result in ugly layout changes.
+
 ///
 /// {@macro flutter.widgets.image.filterQualityParameter}
 ///
@@ -162,11 +147,29 @@ import 'package:hive/hive.dart';
 ///
 /// Anti-aliasing alleviates the sawtooth artifact when the image is rotated.
 
+///[FastCachedImage] creates a widget to display network images. This widget downloads the network image
+///when this widget is build for the first time. Later whenever this widget is called the image will be displayed from
+///the downloaded database instead of the network. This can avoid unnecessary downloads and load images much faster.
 class FastCachedImage extends StatefulWidget {
+  ///Provide the [url] for the image to display.
   final String url;
+
+  ///[errorBuilder] must return a widget. This widget will be displayed if there is any error in downloading or displaying
+  ///the downloaded image
   final ImageErrorWidgetBuilder? errorBuilder;
+
+  ///[loadingBuilder] must return a widget. This widget is shown when the image is being downloaded and processed
   final Widget Function(BuildContext)? loadingBuilder;
+
+  ///[progressBuilder] is the builder which can show the download progress of an image.
+
+  ///Usage: progressBuilder(context, int downloaded, int? total){return Text('$downloaded / $total ')}
+  final Widget Function(BuildContext, int downloaded, int? total, ValueListenable<double> progress)? progressBuilder;
+
+  ///[fadeInDuration] can be adjusted to change the duration of the fade transition between the [loadingBuilder]
+  ///and the actual image. Default value is 500 ms.
   final Duration fadeInDuration;
+
   final double? width;
   final double? height;
   final double scale;
@@ -183,6 +186,8 @@ class FastCachedImage extends StatefulWidget {
   final String? semanticLabel;
   final bool excludeFromSemantics;
   final bool isAntiAlias;
+
+  ///[disableErrorLogs] can be set to true if you want to ignore error logs from the widget
   final bool disableErrorLogs;
 
   const FastCachedImage(
@@ -191,6 +196,7 @@ class FastCachedImage extends StatefulWidget {
       this.errorBuilder,
       this.semanticLabel,
       this.loadingBuilder,
+      this.progressBuilder,
       this.excludeFromSemantics = false,
       this.disableErrorLogs = false,
       this.width,
@@ -246,6 +252,10 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
     super.dispose();
   }
 
+  int downloaded = 0;
+  ValueNotifier<double> progress = ValueNotifier(0);
+  int? total;
+
   @override
   Widget build(BuildContext context) {
     if (imageResponse?.error != null && widget.errorBuilder != null) {
@@ -259,7 +269,15 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
         fit: StackFit.passthrough,
         children: [
           if (animationController.status != AnimationStatus.completed)
-            (widget.loadingBuilder != null) ? widget.loadingBuilder!(context) : const SizedBox(),
+            (widget.loadingBuilder != null)
+                ? widget.loadingBuilder!(context)
+                : (widget.progressBuilder != null)
+                    ? ValueListenableBuilder(
+                        valueListenable: progress,
+                        builder: (context, p, c) {
+                          return widget.progressBuilder!(context, downloaded, total, progress);
+                        })
+                    : const SizedBox(),
           if (imageResponse != null)
             FadeTransition(
               opacity: animation,
@@ -290,10 +308,12 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
                 repeat: widget.repeat,
                 scale: widget.scale,
                 semanticLabel: widget.semanticLabel,
-                frameBuilder: widget.loadingBuilder != null
+                frameBuilder: (widget.loadingBuilder != null || widget.progressBuilder != null)
                     ? (context, a, b, c) {
                         if (b == null) {
-                          return widget.loadingBuilder!(context);
+                          return (widget.loadingBuilder != null)
+                              ? widget.loadingBuilder!(context)
+                              : widget.progressBuilder!(context, downloaded, total, progress);
                         }
 
                         if (animationController.status != AnimationStatus.completed) {
@@ -317,7 +337,7 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
 
     if (image != null) {
       setState(() => imageResponse = _ImageResponse(imageData: image, error: null));
-      if (widget.loadingBuilder == null) animationController.forward();
+      if (widget.loadingBuilder == null && widget.progressBuilder == null) animationController.forward();
 
       return;
     }
@@ -348,7 +368,14 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
 
       final Uint8List bytes = await consolidateHttpClientResponseBytes(
         response,
-        onBytesReceived: (int cumulative, int? total) {
+        onBytesReceived: (int cumulative, int? tot) {
+          if (widget.progressBuilder != null) {
+            downloaded = cumulative;
+            total = tot;
+            progress.value = tot != null ? downloaded / total! : 0;
+            widget.progressBuilder!(context, downloaded, total, progress);
+          }
+
           chunkEvents.add(ImageChunkEvent(
             cumulativeBytesLoaded: cumulative,
             expectedTotalBytes: total,
@@ -362,7 +389,7 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
       }
       if (mounted) {
         setState(() => imageResponse = _ImageResponse(imageData: bytes, error: null));
-        if (widget.loadingBuilder == null) animationController.forward();
+        if (widget.loadingBuilder == null && widget.progressBuilder == null) animationController.forward();
       }
 
       await FastCachedImageConfig._saveImage(url, bytes);
