@@ -10,6 +10,8 @@
 .svn/
 migrate_working_dir/
 windows/
+android/
+
 
 # IntelliJ related
 *.iml
