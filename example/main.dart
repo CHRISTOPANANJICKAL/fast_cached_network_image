@@ -4,9 +4,7 @@ import 'package:flutter/material.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  String storageLocation = 'E:/fast';
-  await FastCachedImageConfig.init(
-      path: storageLocation, clearCacheAfter: const Duration(days: 15));
+  await FastCachedImageConfig.init(clearCacheAfter: const Duration(days: 15));
 
   runApp(const MyApp());
 }

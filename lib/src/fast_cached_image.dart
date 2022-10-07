@@ -412,15 +412,11 @@ class _ImageResponse {
 class FastCachedImageConfig {
   static Box? _box;
 
-  static Future<void> init(
-      {required String path, Duration? clearCacheAfter}) async {
-    if (!kIsWeb && path.isEmpty) {
-      throw Exception('Image storage location path cannot be empty');
-    }
-
+  static Future<void> init({Duration? clearCacheAfter}) async {
     clearCacheAfter ??= const Duration(days: 7);
 
-    Hive.initFlutter(path);
+    await Hive.initFlutter();
+
     _box = await Hive.openBox('FastCachedImageStorageBox');
     await _clearOldCache(clearCacheAfter);
   }
