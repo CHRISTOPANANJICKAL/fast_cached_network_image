@@ -41,7 +41,7 @@ class _MyAppState extends State<MyApp> {
               errorBuilder: (context, exception, stacktrace) {
                 return Text(exception.toString());
               },
-              progressBuilder: (context, progress) {
+              loadingBuilder: (context, progress) {
                 return Container(
                   color: Colors.yellow,
                   child: Stack(

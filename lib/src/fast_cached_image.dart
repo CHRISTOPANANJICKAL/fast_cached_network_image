@@ -155,16 +155,12 @@ class FastCachedImage extends StatefulWidget {
   ///the downloaded image
   final ImageErrorWidgetBuilder? errorBuilder;
 
-  //[loadingBuilder] must return a widget. This widget is shown when the image is being downloaded and processed
-  // final Widget Function(BuildContext)? loadingBuilder;
+  ///[loadingBuilder] is the builder which can show the download progress of an image.
 
-  ///[progressBuilder] is the builder which can show the download progress of an image.
+  ///Usage: loadingBuilder(context, FastCachedProgressData progressData){return  Text('${progress.downloadedBytes ~/ 1024} / ${progress.totalBytes! ~/ 1024} kb')}
+  final Widget Function(BuildContext, FastCachedProgressData)? loadingBuilder;
 
-  ///Usage: progressBuilder(context, int downloaded, int? total){return Text('$downloaded / $total ')}
-  // final Widget Function(BuildContext, int downloaded, int? total, ValueListenable<double> progress)? progressBuilder;
-  final Widget Function(BuildContext, FastCachedProgressData)? progressBuilder;
-
-  ///[fadeInDuration] can be adjusted to change the duration of the fade transition between the [progressBuilder]
+  ///[fadeInDuration] can be adjusted to change the duration of the fade transition between the [loadingBuilder]
   ///and the actual image. Default value is 500 ms.
   final Duration fadeInDuration;
 
@@ -196,8 +192,7 @@ class FastCachedImage extends StatefulWidget {
       this.scale = 1.0,
       this.errorBuilder,
       this.semanticLabel,
-      // this.loadingBuilder,
-      this.progressBuilder,
+      this.loadingBuilder,
       this.excludeFromSemantics = false,
       this.disableErrorLogs = false,
       this.width,
@@ -228,11 +223,6 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
 
   late Animation<double> _animation;
   late AnimationController _animationController;
-
-  // int _downloaded = 0;
-  // final ValueNotifier<double> _progress = ValueNotifier(0);
-  // int? _total;
-  // bool _isDownloading = false;
 
   late FastCachedProgressData progressData;
 
@@ -279,12 +269,11 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
             // (widget.loadingBuilder != null)
             // ? widget.loadingBuilder!(context)
             // :
-            (widget.progressBuilder != null)
+            (widget.loadingBuilder != null)
                 ? ValueListenableBuilder(
                     valueListenable: progressData.progressPercentage,
                     builder: (context, p, c) {
-                      // return widget.progressBuilder!(context, downloaded, total, progress);
-                      return widget.progressBuilder!(context, progressData);
+                      return widget.loadingBuilder!(context, progressData);
                     })
                 : const SizedBox(),
           if (_imageResponse != null)
@@ -317,21 +306,16 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
                 repeat: widget.repeat,
                 scale: widget.scale,
                 semanticLabel: widget.semanticLabel,
-                // frameBuilder: (widget.loadingBuilder != null || widget.progressBuilder != null)
-                frameBuilder: (widget.progressBuilder != null)
+                frameBuilder: (widget.loadingBuilder != null)
                     ? (context, a, b, c) {
                         if (b == null) {
-                          return
-                              // (widget.loadingBuilder != null)
-                              //   ? widget.loadingBuilder!(context)
-                              //   :widget.progressBuilder!(context, downloaded, total, progress);
-                              widget.progressBuilder!(
-                                  context,
-                                  FastCachedProgressData(
-                                      progressPercentage: progressData.progressPercentage,
-                                      totalBytes: progressData.totalBytes,
-                                      downloadedBytes: progressData.downloadedBytes,
-                                      isDownloading: false));
+                          return widget.loadingBuilder!(
+                              context,
+                              FastCachedProgressData(
+                                  progressPercentage: progressData.progressPercentage,
+                                  totalBytes: progressData.totalBytes,
+                                  downloadedBytes: progressData.downloadedBytes,
+                                  isDownloading: false));
                         }
 
                         if (_animationController.status != AnimationStatus.completed) {
@@ -355,8 +339,7 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
 
     if (image != null) {
       setState(() => _imageResponse = _ImageResponse(imageData: image, error: null));
-      // if (widget.loadingBuilder == null && widget.progressBuilder == null) animationController.forward();
-      if (widget.progressBuilder == null) _animationController.forward();
+      if (widget.loadingBuilder == null) _animationController.forward();
 
       return;
     }
@@ -387,18 +370,18 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
 
       //set is downloading flag to true
       progressData.isDownloading = true;
-      widget.progressBuilder!(context, progressData);
+      widget.loadingBuilder!(context, progressData);
 
       final Uint8List bytes = await consolidateHttpClientResponseBytes(
         response,
         onBytesReceived: (int cumulative, int? tot) {
-          if (widget.progressBuilder != null) {
+          if (widget.loadingBuilder != null) {
             progressData.downloadedBytes = cumulative;
             progressData.totalBytes = tot;
             // _progress.value = tot != null ? _downloaded / _total! : 0;
             progressData.progressPercentage.value =
                 tot != null ? double.parse((cumulative / tot).toStringAsFixed(2)) : 0;
-            widget.progressBuilder!(context, progressData);
+            widget.loadingBuilder!(context, progressData);
           }
 
           chunkEvents.add(ImageChunkEvent(
@@ -417,8 +400,7 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
       }
       if (mounted) {
         setState(() => _imageResponse = _ImageResponse(imageData: bytes, error: null));
-        // if (widget.loadingBuilder == null && widget.progressBuilder == null) animationController.forward();
-        if (widget.progressBuilder == null) _animationController.forward();
+        if (widget.loadingBuilder == null) _animationController.forward();
       }
 
       await FastCachedImageConfig._saveImage(url, bytes);
