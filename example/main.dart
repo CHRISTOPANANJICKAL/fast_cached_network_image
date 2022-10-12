@@ -5,12 +5,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   String storageLocation = 'E:/fast';
-  print('init');
-  final a = DateTime.now();
   await FastCachedImageConfig.init(path: storageLocation, clearCacheAfter: const Duration(days: 15));
-  print(DateTime.now().difference(a).inMilliseconds);
-
-  print('init over');
 
   runApp(const MyApp());
 }
@@ -23,81 +18,78 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  // String url1 = 'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885__480.jpg';
-  String url1 =
-      'https://effigis.com/wp-content/uploads/2015/02/DigitalGlobe_WorldView1_50cm_8bit_BW_DRA_Bangkok_Thailand_2009JAN06_8bits_sub_r_1.jpg';
-  String url2 =
-      'https://effigis.com/wp-content/uploads/2015/02/DigitalGlobe_WorldView2_50cm_8bit_Pansharpened_RGB_DRA_Rome_Italy_2009DEC10_8bits_sub_r_1.jpg';
-  String url3 =
-      'https://effigis.com/wp-content/uploads/2015/02/DigitalGlobe_QuickBird_60cm_8bit_RGB_DRA_Boulder_2005JUL04_8bits_sub_r_1.jpg';
-  String url4 =
-      'https://effigis.com/wp-content/themes/effigis_2014/img/RapidEye_RapidEye_5m_RGB_Altotting_Germany_Agriculture_and_Forestry_2009MAY17_8bits_sub_r_2.jpg';
+  String url1 = 'https://www.sefram.com/images/products/photos/hi_res/7202.jpg';
+
+  bool isImageCached = false;
+  String? log;
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
         home: Scaffold(
-            body: SingleChildScrollView(
+            body: Center(
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // SizedBox(
-          //   height: 350,
-          //   width: 350,
-          //   child: CachedNetworkImage(
-          //     imageUrl: url1,
-          //     progressIndicatorBuilder: (contex, _, s) {
-          //       return CircularProgressIndicator(value: s.progress);
-          //     },
-          //   ),
-          // ),
-          Img(url: url1),
-          // Img(url: url2),
-          // Img(url: url3),
-          // Img(url: url4),
-
-          MaterialButton(
-            onPressed: () => print(FastCachedImageConfig.isCached(imageUrl: url1)),
-            child: const Text('check'),
+          SizedBox(
+            height: 150,
+            width: 150,
+            child: FastCachedImage(
+              url: url1,
+              fit: BoxFit.cover,
+              fadeInDuration: const Duration(seconds: 1),
+              errorBuilder: (context, exception, stacktrace) {
+                return Text(exception.toString());
+              },
+              progressBuilder: (context, progress) {
+                return Container(
+                  color: Colors.yellow,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      if (progress.isDownloading && progress.totalBytes != null)
+                        Text('${progress.downloadedBytes ~/ 1024} / ${progress.totalBytes! ~/ 1024} kb',
+                            style: const TextStyle(color: Colors.red)),
+                      SizedBox(
+                          width: 120,
+                          height: 120,
+                          child:
+                              CircularProgressIndicator(color: Colors.red, value: progress.progressPercentage.value)),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
+          const SizedBox(height: 12),
+          Text('Is image cached? = $isImageCached', style: const TextStyle(color: Colors.red)),
+          const SizedBox(height: 12),
+          Text(log ?? ''),
+          const SizedBox(height: 120),
           MaterialButton(
-            onPressed: () => FastCachedImageConfig.clearCachedImage(imageUrl: url1),
-            child: const Text('delete'),
+            onPressed: () async {
+              setState(() => isImageCached = FastCachedImageConfig.isCached(imageUrl: url1));
+            },
+            child: const Text('check image is cached or not'),
           ),
+          const SizedBox(height: 12),
           MaterialButton(
-            onPressed: () => FastCachedImageConfig.clearAllCachedImages(),
-            child: const Text('del all'),
+            onPressed: () async {
+              await FastCachedImageConfig.deleteCachedImage(imageUrl: url1);
+              setState(() => log = 'deleted image $url1');
+            },
+            child: const Text('delete cached image'),
+          ),
+          const SizedBox(height: 12),
+          MaterialButton(
+            onPressed: () async {
+              await FastCachedImageConfig.clearAllCachedImages();
+              setState(() => log = 'All cached images deleted');
+            },
+            child: const Text('delete all cached images'),
           ),
         ],
       ),
     )));
-  }
-}
-
-class Img extends StatelessWidget {
-  final String url;
-  const Img({Key? key, required this.url}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 150,
-      width: 150,
-      child: FastCachedImage(
-        url: url,
-        fit: BoxFit.cover,
-        fadeInDuration: const Duration(seconds: 1),
-        errorBuilder: (context, exception, stacktrace) {
-          return Text(exception.toString());
-        },
-        // loadingBuilder: (context) {
-        //   return Container(color: Colors.yellow);
-        // },
-        progressBuilder: (context, a, b, progress) {
-          return Container(
-            color: Colors.green,
-            child: CircularProgressIndicator(color: Colors.red, value: progress.value),
-          );
-        },
-      ),
-    );
   }
 }
