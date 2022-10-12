@@ -15,3 +15,11 @@
 
 * Added fade in and out transitions while displaying the image
 * Added error logging
+
+## 0.0.5
+
+* Performance improvements
+* Added methods to clear all cache
+* Added method to clear a given image from cache
+* Added method to check whether a given image exist in cache
+* Updated loadingBuilder function with the download progress data 
