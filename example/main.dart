@@ -39,7 +39,7 @@ class _MyAppState extends State<MyApp> {
               fit: BoxFit.cover,
               fadeInDuration: const Duration(seconds: 1),
               errorBuilder: (context, exception, stacktrace) {
-                return Text(exception.toString());
+                return Text(stacktrace.toString());
               },
               loadingBuilder: (context, progress) {
                 return Container(
