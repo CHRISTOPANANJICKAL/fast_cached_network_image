@@ -389,7 +389,9 @@ class FastCachedImageConfig {
     if (_imageKeyBox!.keys.contains(imageUrl) && _imageBox!.keys.contains(imageUrl)) {
       await _imageKeyBox!.delete(imageUrl);
       await _imageBox!.delete(imageUrl);
-      if (showLog) debugPrint('FastCacheImage: Removed image $imageUrl from cache.');
+      if (showLog) {
+        debugPrint('FastCacheImage: Removed image $imageUrl from cache.');
+      }
     }
   }
 
