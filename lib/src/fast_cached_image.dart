@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'models/fast_cache_progress_data.dart';
 
 /// The underlying widget is [Image.memory]
 /// The `scale` argument specifies the linear scale factor for drawing this
@@ -154,15 +155,16 @@ class FastCachedImage extends StatefulWidget {
   ///the downloaded image
   final ImageErrorWidgetBuilder? errorBuilder;
 
-  ///[loadingBuilder] must return a widget. This widget is shown when the image is being downloaded and processed
-  final Widget Function(BuildContext)? loadingBuilder;
+  //[loadingBuilder] must return a widget. This widget is shown when the image is being downloaded and processed
+  // final Widget Function(BuildContext)? loadingBuilder;
 
   ///[progressBuilder] is the builder which can show the download progress of an image.
 
   ///Usage: progressBuilder(context, int downloaded, int? total){return Text('$downloaded / $total ')}
-  final Widget Function(BuildContext, int downloaded, int? total, ValueListenable<double> progress)? progressBuilder;
+  // final Widget Function(BuildContext, int downloaded, int? total, ValueListenable<double> progress)? progressBuilder;
+  final Widget Function(BuildContext, FastCachedProgressData)? progressBuilder;
 
-  ///[fadeInDuration] can be adjusted to change the duration of the fade transition between the [loadingBuilder]
+  ///[fadeInDuration] can be adjusted to change the duration of the fade transition between the [progressBuilder]
   ///and the actual image. Default value is 500 ms.
   final Duration fadeInDuration;
 
@@ -194,7 +196,7 @@ class FastCachedImage extends StatefulWidget {
       this.scale = 1.0,
       this.errorBuilder,
       this.semanticLabel,
-      this.loadingBuilder,
+      // this.loadingBuilder,
       this.progressBuilder,
       this.excludeFromSemantics = false,
       this.disableErrorLogs = false,
@@ -222,21 +224,31 @@ class FastCachedImage extends StatefulWidget {
 }
 
 class _FastCachedImageState extends State<FastCachedImage> with TickerProviderStateMixin {
-  _ImageResponse? imageResponse;
+  _ImageResponse? _imageResponse;
 
-  late Animation<double> animation;
-  late AnimationController animationController;
+  late Animation<double> _animation;
+  late AnimationController _animationController;
+
+  // int _downloaded = 0;
+  // final ValueNotifier<double> _progress = ValueNotifier(0);
+  // int? _total;
+  // bool _isDownloading = false;
+
+  late FastCachedProgressData progressData;
+
   @override
   void initState() {
-    animationController = AnimationController(vsync: this, duration: widget.fadeInDuration);
-    animation =
-        Tween<double>(begin: widget.fadeInDuration == Duration.zero ? 1 : 0, end: 1).animate(animationController);
+    _animationController = AnimationController(vsync: this, duration: widget.fadeInDuration);
+    _animation =
+        Tween<double>(begin: widget.fadeInDuration == Duration.zero ? 1 : 0, end: 1).animate(_animationController);
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       _loadAsync(widget.url);
-      animationController.addStatusListener((status) => _animationListener(status));
+      _animationController.addStatusListener((status) => _animationListener(status));
     });
 
+    progressData = FastCachedProgressData(
+        progressPercentage: ValueNotifier(0), totalBytes: null, downloadedBytes: 0, isDownloading: false);
     super.initState();
   }
 
@@ -246,20 +258,16 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
 
   @override
   void dispose() {
-    animationController.removeListener(() => {});
-    animationController.dispose();
+    _animationController.removeListener(() => {});
+    _animationController.dispose();
     super.dispose();
   }
 
-  int downloaded = 0;
-  ValueNotifier<double> progress = ValueNotifier(0);
-  int? total;
-
   @override
   Widget build(BuildContext context) {
-    if (imageResponse?.error != null && widget.errorBuilder != null) {
-      _logErrors(imageResponse?.error);
-      return widget.errorBuilder!(context, Object, StackTrace.fromString(imageResponse!.error!));
+    if (_imageResponse?.error != null && widget.errorBuilder != null) {
+      _logErrors(_imageResponse?.error);
+      return widget.errorBuilder!(context, Object, StackTrace.fromString(_imageResponse!.error!));
     }
 
     return SizedBox(
@@ -267,21 +275,23 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
         alignment: Alignment.center,
         fit: StackFit.passthrough,
         children: [
-          if (animationController.status != AnimationStatus.completed)
-            (widget.loadingBuilder != null)
-                ? widget.loadingBuilder!(context)
-                : (widget.progressBuilder != null)
-                    ? ValueListenableBuilder(
-                        valueListenable: progress,
-                        builder: (context, p, c) {
-                          return widget.progressBuilder!(context, downloaded, total, progress);
-                        })
-                    : const SizedBox(),
-          if (imageResponse != null)
+          if (_animationController.status != AnimationStatus.completed)
+            // (widget.loadingBuilder != null)
+            // ? widget.loadingBuilder!(context)
+            // :
+            (widget.progressBuilder != null)
+                ? ValueListenableBuilder(
+                    valueListenable: progressData.progressPercentage,
+                    builder: (context, p, c) {
+                      // return widget.progressBuilder!(context, downloaded, total, progress);
+                      return widget.progressBuilder!(context, progressData);
+                    })
+                : const SizedBox(),
+          if (_imageResponse != null)
             FadeTransition(
-              opacity: animation,
+              opacity: _animation,
               child: Image.memory(
-                imageResponse!.imageData,
+                _imageResponse!.imageData,
                 color: widget.color,
                 width: widget.width,
                 height: widget.height,
@@ -289,8 +299,8 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
                 key: widget.key,
                 fit: widget.fit,
                 errorBuilder: (a, c, v) {
-                  if (animationController.status != AnimationStatus.completed) {
-                    animationController.forward();
+                  if (_animationController.status != AnimationStatus.completed) {
+                    _animationController.forward();
                     _logErrors(c);
                     FastCachedImageConfig.deleteCachedImage(imageUrl: widget.url);
                   }
@@ -307,16 +317,25 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
                 repeat: widget.repeat,
                 scale: widget.scale,
                 semanticLabel: widget.semanticLabel,
-                frameBuilder: (widget.loadingBuilder != null || widget.progressBuilder != null)
+                // frameBuilder: (widget.loadingBuilder != null || widget.progressBuilder != null)
+                frameBuilder: (widget.progressBuilder != null)
                     ? (context, a, b, c) {
                         if (b == null) {
-                          return (widget.loadingBuilder != null)
-                              ? widget.loadingBuilder!(context)
-                              : widget.progressBuilder!(context, downloaded, total, progress);
+                          return
+                              // (widget.loadingBuilder != null)
+                              //   ? widget.loadingBuilder!(context)
+                              //   :widget.progressBuilder!(context, downloaded, total, progress);
+                              widget.progressBuilder!(
+                                  context,
+                                  FastCachedProgressData(
+                                      progressPercentage: progressData.progressPercentage,
+                                      totalBytes: progressData.totalBytes,
+                                      downloadedBytes: progressData.downloadedBytes,
+                                      isDownloading: false));
                         }
 
-                        if (animationController.status != AnimationStatus.completed) {
-                          animationController.forward();
+                        if (_animationController.status != AnimationStatus.completed) {
+                          _animationController.forward();
                         }
                         return a;
                       }
@@ -335,8 +354,9 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
     if (!mounted) return;
 
     if (image != null) {
-      setState(() => imageResponse = _ImageResponse(imageData: image, error: null));
-      if (widget.loadingBuilder == null && widget.progressBuilder == null) animationController.forward();
+      setState(() => _imageResponse = _ImageResponse(imageData: image, error: null));
+      // if (widget.loadingBuilder == null && widget.progressBuilder == null) animationController.forward();
+      if (widget.progressBuilder == null) _animationController.forward();
 
       return;
     }
@@ -358,43 +378,53 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
         await response.drain<List<int>>(<int>[]);
         String error = NetworkImageLoadException(statusCode: response.statusCode, uri: resolved).toString();
         if (mounted) {
-          setState(() => imageResponse = _ImageResponse(imageData: Uint8List.fromList([]), error: error));
+          setState(() => _imageResponse = _ImageResponse(imageData: Uint8List.fromList([]), error: error));
         }
         return;
       }
 
       if (!mounted) return;
 
+      //set is downloading flag to true
+      progressData.isDownloading = true;
+      widget.progressBuilder!(context, progressData);
+
       final Uint8List bytes = await consolidateHttpClientResponseBytes(
         response,
         onBytesReceived: (int cumulative, int? tot) {
           if (widget.progressBuilder != null) {
-            downloaded = cumulative;
-            total = tot;
-            progress.value = tot != null ? downloaded / total! : 0;
-            widget.progressBuilder!(context, downloaded, total, progress);
+            progressData.downloadedBytes = cumulative;
+            progressData.totalBytes = tot;
+            // _progress.value = tot != null ? _downloaded / _total! : 0;
+            progressData.progressPercentage.value =
+                tot != null ? double.parse((cumulative / tot).toStringAsFixed(2)) : 0;
+            widget.progressBuilder!(context, progressData);
           }
 
           chunkEvents.add(ImageChunkEvent(
             cumulativeBytesLoaded: cumulative,
-            expectedTotalBytes: total,
+            expectedTotalBytes: tot,
           ));
         },
       );
 
+      //set is downloading flag to false
+      progressData.isDownloading = false;
+
       if (bytes.isEmpty && mounted) {
-        setState(() => imageResponse = _ImageResponse(imageData: bytes, error: 'Image is empty.'));
+        setState(() => _imageResponse = _ImageResponse(imageData: bytes, error: 'Image is empty.'));
         return;
       }
       if (mounted) {
-        setState(() => imageResponse = _ImageResponse(imageData: bytes, error: null));
-        if (widget.loadingBuilder == null && widget.progressBuilder == null) animationController.forward();
+        setState(() => _imageResponse = _ImageResponse(imageData: bytes, error: null));
+        // if (widget.loadingBuilder == null && widget.progressBuilder == null) animationController.forward();
+        if (widget.progressBuilder == null) _animationController.forward();
       }
 
       await FastCachedImageConfig._saveImage(url, bytes);
     } catch (e) {
       if (mounted) {
-        setState(() => imageResponse = _ImageResponse(imageData: Uint8List.fromList([]), error: e.toString()));
+        setState(() => _imageResponse = _ImageResponse(imageData: Uint8List.fromList([]), error: e.toString()));
       }
     } finally {
       if (!chunkEvents.isClosed) await chunkEvents.close();
