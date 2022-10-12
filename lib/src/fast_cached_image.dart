@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:fast_cached_network_image/src/models/image_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
@@ -147,9 +146,6 @@ import 'package:hive/hive.dart';
 ///
 /// Anti-aliasing alleviates the sawtooth artifact when the image is rotated.
 
-///[FastCachedImage] creates a widget to display network images. This widget downloads the network image
-///when this widget is build for the first time. Later whenever this widget is called the image will be displayed from
-///the downloaded database instead of the network. This can avoid unnecessary downloads and load images much faster.
 class FastCachedImage extends StatefulWidget {
   ///Provide the [url] for the image to display.
   final String url;
@@ -190,6 +186,9 @@ class FastCachedImage extends StatefulWidget {
   ///[disableErrorLogs] can be set to true if you want to ignore error logs from the widget
   final bool disableErrorLogs;
 
+  ///[FastCachedImage] creates a widget to display network images. This widget downloads the network image
+  ///when this widget is build for the first time. Later whenever this widget is called the image will be displayed from
+  ///the downloaded database instead of the network. This can avoid unnecessary downloads and load images much faster.
   const FastCachedImage(
       {required this.url,
       this.scale = 1.0,
@@ -293,7 +292,7 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
                   if (animationController.status != AnimationStatus.completed) {
                     animationController.forward();
                     _logErrors(c);
-                    FastCachedImageConfig.clearCachedImage(imageUrl: widget.url);
+                    FastCachedImageConfig.deleteCachedImage(imageUrl: widget.url);
                   }
                   return widget.errorBuilder != null ? widget.errorBuilder!(a, c, v) : const SizedBox();
                 },
@@ -416,7 +415,8 @@ class _ImageResponse {
 }
 
 class FastCachedImageConfig {
-  static LazyBox? _box;
+  static LazyBox? _imageKeyBox;
+  static LazyBox? _imageBox;
   static bool _isInitialized = false;
   static const String _notInitMessage =
       'FastCachedImage is not initialized. Please use FastCachedImageConfig.init to initialize FastCachedImage';
@@ -438,39 +438,51 @@ class FastCachedImageConfig {
     Hive.init(path);
     _isInitialized = true;
 
-    _box = await Hive.openLazyBox('FastCachedImageStorageBox');
+    _imageKeyBox = await Hive.openLazyBox(_BoxNames.imagesKeyBox);
+    _imageBox = await Hive.openLazyBox(_BoxNames.imagesBox);
     await _clearOldCache(clearCacheAfter);
   }
 
   static Future<Uint8List?> _getImage(String url) async {
-    if (_box!.keys.contains(url)) {
-      FastCacheImageModel model = FastCacheImageModel.fromJson(await _box!.get(url));
-      return model.data;
+    if (_imageKeyBox!.keys.contains(url) && _imageBox!.keys.contains(url)) {
+      Uint8List? data = await _imageBox!.get(url);
+      if (data == null || data.isEmpty) return null;
+
+      return data;
     }
+
     return null;
   }
 
+  ///[_saveImage] is to save an image to cache. Not part of public API.
   static Future<void> _saveImage(String url, Uint8List image) async {
-    await _box!.put(url, FastCacheImageModel(dateCreated: DateTime.now(), data: image).toJson());
+    await _imageKeyBox!.put(url, DateTime.now());
+    await _imageBox!.put(url, image);
   }
 
+  ///[_clearOldCache] clears the old cache. Not part of public API.
   static Future<void> _clearOldCache(Duration cleatCacheAfter) async {
     DateTime today = DateTime.now();
 
-    for (final key in _box!.keys) {
-      FastCacheImageModel model = FastCacheImageModel.fromJson(await _box!.get(key));
+    for (final key in _imageKeyBox!.keys) {
+      DateTime? dateCreated = await _imageKeyBox!.get(key);
 
-      if (today.difference(model.dateCreated) > cleatCacheAfter) {
-        await _box!.delete(key);
+      if (dateCreated == null) continue;
+
+      if (today.difference(dateCreated) > cleatCacheAfter) {
+        await _imageKeyBox!.delete(key);
+        await _imageBox!.delete(key);
       }
     }
   }
 
-  ///[clearCachedImage] function takes in a image [imageUrl] and removes the image corresponding to the url
+  ///[deleteCachedImage] function takes in a image [imageUrl] and removes the image corresponding to the url
   /// from the cache if the image is present in the cache.
-  static Future<void> clearCachedImage({required String imageUrl, bool showLog = true}) async {
-    if (_box!.keys.contains(imageUrl)) {
-      await _box!.delete(imageUrl);
+  static Future<void> deleteCachedImage({required String imageUrl, bool showLog = true}) async {
+    _checkInit();
+    if (_imageKeyBox!.keys.contains(imageUrl) && _imageBox!.keys.contains(imageUrl)) {
+      await _imageKeyBox!.delete(imageUrl);
+      await _imageBox!.delete(imageUrl);
       if (showLog) debugPrint('FastCacheImage: Removed image $imageUrl from cache.');
     }
   }
@@ -479,21 +491,33 @@ class FastCachedImageConfig {
   ///logout functionality of your app, so that all cached images corresponding to the user's account is removed.
   static Future<void> clearAllCachedImages({bool showLog = true}) async {
     _checkInit();
-    await _box!.deleteFromDisk();
+    await _imageKeyBox!.deleteFromDisk();
+    await _imageBox!.deleteFromDisk();
     if (showLog) debugPrint('FastCacheImage: All cache cleared.');
-    _box = await Hive.openLazyBox('FastCachedImageStorageBox');
+    _imageKeyBox = await Hive.openLazyBox(_BoxNames.imagesKeyBox);
+    _imageBox = await Hive.openLazyBox(_BoxNames.imagesBox);
   }
 
+  ///[_checkInit] method ensures the hive db is initialized. Not part of public API
   static _checkInit() {
-    if (FastCachedImageConfig._box == null || !FastCachedImageConfig._box!.isOpen) {
+    if ((FastCachedImageConfig._imageKeyBox == null || !FastCachedImageConfig._imageKeyBox!.isOpen) ||
+        FastCachedImageConfig._imageBox == null ||
+        !FastCachedImageConfig._imageBox!.isOpen) {
       throw Exception(_notInitMessage);
     }
   }
 
   ///[isCached] returns a boolean indicating whether the given image is cached or not.
+  ///Returns true if cached, false if not.
   static bool isCached({required String imageUrl}) {
     _checkInit();
-    if (_box!.containsKey(imageUrl)) return true;
+    if (_imageKeyBox!.containsKey(imageUrl) && _imageBox!.keys.contains(imageUrl)) return true;
     return false;
   }
+}
+
+///[_BoxNames] contains the name of the boxes. Not part of public API
+class _BoxNames {
+  static String imagesBox = 'cachedImages';
+  static String imagesKeyBox = 'cachedImagesKeys';
 }
