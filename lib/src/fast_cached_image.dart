@@ -31,10 +31,19 @@ class FastCachedImage extends StatefulWidget {
   /// If the image is of a high quality and its pixels are perfectly aligned
   /// with the physical screen pixels, extra quality enhancement may not be
   /// necessary. If so, then [FilterQuality.none] would be the most efficient.
+  ///[width] width of the image
   final double? width;
+
+  ///[height] of the image
   final double? height;
+
+  ///[scale] property in Flutter memory image.
   final double scale;
+
+  ///[color] property in Flutter memory image.
   final Color? color;
+
+  ///[opacity] property in Flutter memory image.
   final Animation<double>? opacity;
 
   /// If the pixels are not perfectly aligned with the screen pixels, or if the
@@ -45,7 +54,11 @@ class FastCachedImage extends StatefulWidget {
   /// [opacity] can be used to adjust the opacity of the image.
   /// Used to combine [color] with this image.
   final FilterQuality filterQuality;
+
+  ///[colorBlendMode] property in Flutter memory image
   final BlendMode? colorBlendMode;
+
+  ///[fit] How a box should be inscribed into another box
   final BoxFit? fit;
 
   /// The alignment aligns the given position in the image to the given position
@@ -56,8 +69,14 @@ class FastCachedImage extends StatefulWidget {
   /// alignment of (0.0, 1.0) aligns the bottom middle of the image with the
   /// middle of the bottom edge of its layout bounds.
   final AlignmentGeometry alignment;
+
+  ///[repeat] property in Flutter memory image.
   final ImageRepeat repeat;
+
+  ///[centerSlice] property in Flutter memory image.
   final Rect? centerSlice;
+
+  ///[matchTextDirection] property in Flutter memory image.
   final bool matchTextDirection;
 
   /// Whether to continue showing the old image (true), or briefly show nothing
@@ -71,8 +90,14 @@ class FastCachedImage extends StatefulWidget {
   /// situations where stale or misleading information might be presented.
   /// Consider the following case:
   final bool gaplessPlayback;
+
+  ///[semanticLabel] property in Flutter memory image.
   final String? semanticLabel;
+
+  ///[excludeFromSemantics] property in Flutter memory image.
   final bool excludeFromSemantics;
+
+  ///[isAntiAlias] property in Flutter memory image.
   final bool isAntiAlias;
 
   ///[disableErrorLogs] can be set to true if you want to ignore error logs from the widget
@@ -113,12 +138,17 @@ class FastCachedImage extends StatefulWidget {
 }
 
 class _FastCachedImageState extends State<FastCachedImage> with TickerProviderStateMixin {
+  ///[_imageResponse] not public API.
   _ImageResponse? _imageResponse;
 
+  ///[_animation] not public API.
   late Animation<double> _animation;
+
+  ///[_animationController] not public API.
   late AnimationController _animationController;
 
-  late FastCachedProgressData progressData;
+  ///[_progressData] holds the data indicating the progress of download.
+  late FastCachedProgressData _progressData;
 
   @override
   void initState() {
@@ -131,7 +161,7 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
       _animationController.addStatusListener((status) => _animationListener(status));
     });
 
-    progressData = FastCachedProgressData(
+    _progressData = FastCachedProgressData(
         progressPercentage: ValueNotifier(0), totalBytes: null, downloadedBytes: 0, isDownloading: false);
     super.initState();
   }
@@ -165,9 +195,9 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
             // :
             (widget.loadingBuilder != null)
                 ? ValueListenableBuilder(
-                    valueListenable: progressData.progressPercentage,
+                    valueListenable: _progressData.progressPercentage,
                     builder: (context, p, c) {
-                      return widget.loadingBuilder!(context, progressData);
+                      return widget.loadingBuilder!(context, _progressData);
                     })
                 : const SizedBox(),
           if (_imageResponse != null)
@@ -206,9 +236,9 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
                           return widget.loadingBuilder!(
                               context,
                               FastCachedProgressData(
-                                  progressPercentage: progressData.progressPercentage,
-                                  totalBytes: progressData.totalBytes,
-                                  downloadedBytes: progressData.downloadedBytes,
+                                  progressPercentage: _progressData.progressPercentage,
+                                  totalBytes: _progressData.totalBytes,
+                                  downloadedBytes: _progressData.downloadedBytes,
                                   isDownloading: false));
                         }
 
@@ -225,6 +255,7 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
     );
   }
 
+  ///[_loadAsync] Not public API.
   Future<void> _loadAsync(url) async {
     FastCachedImageConfig._checkInit();
     Uint8List? image = await FastCachedImageConfig._getImage(url);
@@ -263,19 +294,19 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
       if (!mounted) return;
 
       //set is downloading flag to true
-      progressData.isDownloading = true;
-      widget.loadingBuilder!(context, progressData);
+      _progressData.isDownloading = true;
+      widget.loadingBuilder!(context, _progressData);
 
       final Uint8List bytes = await consolidateHttpClientResponseBytes(
         response,
         onBytesReceived: (int cumulative, int? tot) {
           if (widget.loadingBuilder != null) {
-            progressData.downloadedBytes = cumulative;
-            progressData.totalBytes = tot;
+            _progressData.downloadedBytes = cumulative;
+            _progressData.totalBytes = tot;
             // _progress.value = tot != null ? _downloaded / _total! : 0;
-            progressData.progressPercentage.value =
+            _progressData.progressPercentage.value =
                 tot != null ? double.parse((cumulative / tot).toStringAsFixed(2)) : 0;
-            widget.loadingBuilder!(context, progressData);
+            widget.loadingBuilder!(context, _progressData);
           }
 
           chunkEvents.add(ImageChunkEvent(
@@ -286,7 +317,7 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
       );
 
       //set is downloading flag to false
-      progressData.isDownloading = false;
+      _progressData.isDownloading = false;
 
       if (bytes.isEmpty && mounted) {
         setState(() => _imageResponse = _ImageResponse(imageData: bytes, error: 'Image is empty.'));
@@ -320,6 +351,7 @@ class _ImageResponse {
   _ImageResponse({required this.imageData, required this.error});
 }
 
+///[FastCachedImageConfig] is the class to manage and set the cache configurations.
 class FastCachedImageConfig {
   static LazyBox? _imageKeyBox;
   static LazyBox? _imageBox;
@@ -327,7 +359,6 @@ class FastCachedImageConfig {
   static const String _notInitMessage =
       'FastCachedImage is not initialized. Please use FastCachedImageConfig.init to initialize FastCachedImage';
 
-  ///[FastCachedImageConfig] is the class to manage and set the cache configurations.
   ///[init] function initializes the cache management system. Use this code only once in the app in main to avoid errors.
   ///The path param must be a valid location such as temporary directory in android.
   ///[clearCacheAfter] property is used to set a  duration after which the cache will be cleared.
@@ -426,6 +457,9 @@ class FastCachedImageConfig {
 
 ///[_BoxNames] contains the name of the boxes. Not part of public API
 class _BoxNames {
+  ///[imagesBox] db for images
   static String imagesBox = 'cachedImages';
+
+  ///[imagesKeyBox] db for keys of images
   static String imagesKeyBox = 'cachedImagesKeys';
 }
