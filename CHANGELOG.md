@@ -16,7 +16,7 @@
 * Added fade in and out transitions while displaying the image
 * Added error logging
 
-## 0.0.5
+## 1.0.0
 
 * Performance improvements
 * Added methods to clear all cache
