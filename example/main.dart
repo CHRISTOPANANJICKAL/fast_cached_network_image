@@ -77,6 +77,7 @@ class _MyAppState extends State<MyApp> {
             onPressed: () async {
               await FastCachedImageConfig.deleteCachedImage(imageUrl: url1);
               setState(() => log = 'deleted image $url1');
+              await Future.delayed(const Duration(seconds: 2), () => setState(() => log = null));
             },
             child: const Text('delete cached image'),
           ),
@@ -85,6 +86,7 @@ class _MyAppState extends State<MyApp> {
             onPressed: () async {
               await FastCachedImageConfig.clearAllCachedImages();
               setState(() => log = 'All cached images deleted');
+              await Future.delayed(const Duration(seconds: 2), () => setState(() => log = null));
             },
             child: const Text('delete all cached images'),
           ),
