@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'models/fast_cache_progress_data.dart';
+import 'package:dio/dio.dart';
 
 class FastCachedImage extends StatefulWidget {
   ///Provide the [url] for the image to display.
@@ -291,19 +292,40 @@ class _FastCachedImageState extends State<FastCachedImage>
 
     try {
       final Uri resolved = Uri.base.resolve(url);
-      HttpClient httpClient = HttpClient();
+      Dio dio = Dio();
 
-      final HttpClientRequest request = await httpClient.getUrl(resolved);
+      if (!mounted) return;
 
-      // headers?.forEach((String name, String value) {
-      //   request.headers.add(name, value);
-      // });
+      //set is downloading flag to true
+      _progressData.isDownloading = true;
+      widget.loadingBuilder!(context, _progressData);
+      Response response = await dio.get(
+        url,
+        options: Options(responseType: ResponseType.bytes),
+        onReceiveProgress: (int received, int total) {
+          if (widget.loadingBuilder != null) {
+            _progressData.downloadedBytes = received;
+            _progressData.totalBytes = total;
+            double.parse((received / total).toStringAsFixed(2));
+            // _progress.value = tot != null ? _downloaded / _total! : 0;
+            _progressData.progressPercentage.value = total != null
+                ? double.parse((received / total).toStringAsFixed(2))
+                : 0;
+            widget.loadingBuilder!(context, _progressData);
+            setState(() {});
+          }
 
-      final HttpClientResponse response = await request.close();
+          chunkEvents.add(ImageChunkEvent(
+            cumulativeBytesLoaded: received,
+            expectedTotalBytes: total,
+          ));
+        },
+      );
+      final Uint8List bytes = response.data;
+
       if (response.statusCode != HttpStatus.ok) {
-        await response.drain<List<int>>(<int>[]);
         String error = NetworkImageLoadException(
-                statusCode: response.statusCode, uri: resolved)
+                statusCode: response.statusCode ?? 0, uri: resolved)
             .toString();
         if (mounted) {
           setState(() => _imageResponse =
@@ -311,32 +333,6 @@ class _FastCachedImageState extends State<FastCachedImage>
         }
         return;
       }
-
-      if (!mounted) return;
-
-      //set is downloading flag to true
-      _progressData.isDownloading = true;
-      widget.loadingBuilder!(context, _progressData);
-
-      final Uint8List bytes = await consolidateHttpClientResponseBytes(
-        response,
-        onBytesReceived: (int cumulative, int? tot) {
-          if (widget.loadingBuilder != null) {
-            _progressData.downloadedBytes = cumulative;
-            _progressData.totalBytes = tot;
-            // _progress.value = tot != null ? _downloaded / _total! : 0;
-            _progressData.progressPercentage.value = tot != null
-                ? double.parse((cumulative / tot).toStringAsFixed(2))
-                : 0;
-            widget.loadingBuilder!(context, _progressData);
-          }
-
-          chunkEvents.add(ImageChunkEvent(
-            cumulativeBytesLoaded: cumulative,
-            expectedTotalBytes: tot,
-          ));
-        },
-      );
 
       //set is downloading flag to false
       _progressData.isDownloading = false;
@@ -385,16 +381,16 @@ class FastCachedImageConfig {
       'FastCachedImage is not initialized. Please use FastCachedImageConfig.init to initialize FastCachedImage';
 
   ///[init] function initializes the cache management system. Use this code only once in the app in main to avoid errors.
-  ///The path param must be a valid location such as temporary directory in android.
+  /// You can provide a [subDir] where the boxes should be stored.
   ///[clearCacheAfter] property is used to set a  duration after which the cache will be cleared.
   ///Default value of [clearCacheAfter] is 7 days which means if [clearCacheAfter] is set to null,
   /// an image cached today will be cleared when you open the app after 7 days from now.
-  static Future<void> init({Duration? clearCacheAfter}) async {
+  static Future<void> init({String? subDir, Duration? clearCacheAfter}) async {
     if (_isInitialized) return;
 
     clearCacheAfter ??= const Duration(days: 7);
 
-    Hive.initFlutter();
+    await Hive.initFlutter(subDir);
     _isInitialized = true;
 
     _imageKeyBox = await Hive.openLazyBox(_BoxNames.imagesKeyBox);
