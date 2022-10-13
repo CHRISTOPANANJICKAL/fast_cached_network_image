@@ -301,28 +301,27 @@ class _FastCachedImageState extends State<FastCachedImage>
       if (widget.loadingBuilder != null) {
         widget.loadingBuilder!(context, _progressData);
       }
-      Response response = await dio.get(
-        url,
-        options: Options(responseType: ResponseType.bytes),
-        onReceiveProgress: (int received, int total) {
-          if (widget.loadingBuilder != null) {
-            _progressData.downloadedBytes = received;
-            _progressData.totalBytes = total;
-            double.parse((received / total).toStringAsFixed(2));
-            // _progress.value = tot != null ? _downloaded / _total! : 0;
-            _progressData.progressPercentage.value = total != null
-                ? double.parse((received / total).toStringAsFixed(2))
-                : 0;
-            widget.loadingBuilder!(context, _progressData);
-            setState(() {});
-          }
+      Response response = await dio
+          .get(url, options: Options(responseType: ResponseType.bytes),
+              onReceiveProgress: (int received, int total) {
+        if (widget.loadingBuilder != null) {
+          _progressData.downloadedBytes = received;
+          _progressData.totalBytes = total;
+          double.parse((received / total).toStringAsFixed(2));
+          // _progress.value = tot != null ? _downloaded / _total! : 0;
+          _progressData.progressPercentage.value = total != null
+              ? double.parse((received / total).toStringAsFixed(2))
+              : 0;
+          widget.loadingBuilder!(context, _progressData);
+          setState(() {});
+        }
 
-          chunkEvents.add(ImageChunkEvent(
-            cumulativeBytesLoaded: received,
-            expectedTotalBytes: total,
-          ));
-        },
-      );
+        chunkEvents.add(ImageChunkEvent(
+          cumulativeBytesLoaded: received,
+          expectedTotalBytes: total,
+        ));
+      });
+
       final Uint8List bytes = response.data;
 
       if (response.statusCode != HttpStatus.ok) {
