@@ -298,7 +298,9 @@ class _FastCachedImageState extends State<FastCachedImage>
 
       //set is downloading flag to true
       _progressData.isDownloading = true;
-      widget.loadingBuilder!(context, _progressData);
+      if (widget.loadingBuilder != null) {
+        widget.loadingBuilder!(context, _progressData);
+      }
       Response response = await dio.get(
         url,
         options: Options(responseType: ResponseType.bytes),
