@@ -4,9 +4,7 @@ import 'package:flutter/material.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  String storageLocation = 'E:/fast';
-  await FastCachedImageConfig.init(
-      path: storageLocation, clearCacheAfter: const Duration(days: 15));
+  await FastCachedImageConfig.init(clearCacheAfter: const Duration(days: 15));
 
   runApp(const MyApp());
 }
@@ -19,7 +17,8 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String url1 = 'https://www.sefram.com/images/products/photos/hi_res/7202.jpg';
+  String url1 =
+      'https://storage.googleapis.com/cms-storage-bucket/d83012c34a8f88a64e2b.jpg';
 
   bool isImageCached = false;
   String? log;
@@ -43,6 +42,8 @@ class _MyAppState extends State<MyApp> {
                 return Text(stacktrace.toString());
               },
               loadingBuilder: (context, progress) {
+                debugPrint(
+                    'Progress: ${progress.isDownloading} ${progress.downloadedBytes} / ${progress.totalBytes}');
                 return Container(
                   color: Colors.yellow,
                   child: Stack(
