@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
@@ -492,4 +493,146 @@ class _BoxNames {
 
   ///[imagesKeyBox] db for keys of images
   static String imagesKeyBox = 'cachedImagesKeys';
+}
+
+/// The fast cached image implementation of [image_provider.NetworkImage].
+@immutable
+class FastCachedImageProvider extends ImageProvider<NetworkImage>
+    implements NetworkImage {
+  /// Creates an object that fetches the image at the given URL.
+  ///
+  /// The arguments [url] and [scale] must not be null.
+  const FastCachedImageProvider(this.url, {this.scale = 1.0, this.headers});
+
+  @override
+  final String url;
+
+  @override
+  final double scale;
+
+  @override
+  final Map<String, String>? headers;
+
+  @override
+  Future<FastCachedImageProvider> obtainKey(ImageConfiguration configuration) {
+    return SynchronousFuture<FastCachedImageProvider>(this);
+  }
+
+  @override
+  ImageStreamCompleter loadBuffer(
+      NetworkImage key, DecoderBufferCallback decode) {
+    // Ownership of this controller is handed off to [_loadAsync]; it is that
+    // method's responsibility to close the controller's stream when the image
+    // has been loaded or an error is thrown.
+    final StreamController<ImageChunkEvent> chunkEvents =
+        StreamController<ImageChunkEvent>();
+
+    return MultiFrameImageStreamCompleter(
+      codec: _loadAsync(key as FastCachedImageProvider, chunkEvents, decode),
+      chunkEvents: chunkEvents.stream,
+      scale: key.scale,
+      debugLabel: key.url,
+      informationCollector: () => <DiagnosticsNode>[
+        DiagnosticsProperty<ImageProvider>('Image provider', this),
+        DiagnosticsProperty<NetworkImage>('Image key', key),
+      ],
+    );
+  }
+
+  // Do not access this field directly; use [_httpClient] instead.
+  // We set `autoUncompress` to false to ensure that we can trust the value of
+  // the `Content-Length` HTTP header. We automatically uncompress the content
+  // in our call to [consolidateHttpClientResponseBytes].
+  static final HttpClient _sharedHttpClient = HttpClient()
+    ..autoUncompress = false;
+
+  static HttpClient get _httpClient {
+    HttpClient client = _sharedHttpClient;
+    assert(() {
+      if (debugNetworkImageHttpClientProvider != null) {
+        client = debugNetworkImageHttpClientProvider!();
+      }
+      return true;
+    }());
+    return client;
+  }
+
+  Future<ui.Codec> _loadAsync(
+    FastCachedImageProvider key,
+    StreamController<ImageChunkEvent> chunkEvents,
+    DecoderBufferCallback decode,
+  ) async {
+    try {
+      assert(key == this);
+      FastCachedImageConfig._checkInit();
+      Uint8List? image = await FastCachedImageConfig._getImage(url);
+      if (image != null) {
+        final ui.ImmutableBuffer buffer =
+            await ui.ImmutableBuffer.fromUint8List(image);
+        return decode(buffer);
+      }
+
+      final Uri resolved = Uri.base.resolve(key.url);
+
+      final HttpClientRequest request = await _httpClient.getUrl(resolved);
+
+      headers?.forEach((String name, String value) {
+        request.headers.add(name, value);
+      });
+      final HttpClientResponse response = await request.close();
+      if (response.statusCode != HttpStatus.ok) {
+        // The network may be only temporarily unavailable, or the file will be
+        // added on the server later. Avoid having future calls to resolve
+        // fail to check the network again.
+        await response.drain<List<int>>(<int>[]);
+        throw NetworkImageLoadException(
+            statusCode: response.statusCode, uri: resolved);
+      }
+
+      final Uint8List bytes = await consolidateHttpClientResponseBytes(
+        response,
+        onBytesReceived: (int cumulative, int? total) {
+          chunkEvents.add(ImageChunkEvent(
+            cumulativeBytesLoaded: cumulative,
+            expectedTotalBytes: total,
+          ));
+        },
+      );
+      if (bytes.lengthInBytes == 0) {
+        throw Exception('NetworkImage is an empty file: $resolved');
+      }
+
+      final ui.ImmutableBuffer buffer =
+          await ui.ImmutableBuffer.fromUint8List(bytes);
+      await FastCachedImageConfig._saveImage(url, bytes);
+      return decode(buffer);
+    } catch (e) {
+      // Depending on where the exception was thrown, the image cache may not
+      // have had a chance to track the key in the cache at all.
+      // Schedule a microtask to give the cache a chance to add the key.
+      scheduleMicrotask(() {
+        PaintingBinding.instance.imageCache.evict(key);
+      });
+      rethrow;
+    } finally {
+      chunkEvents.close();
+    }
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
+    return other is FastCachedImageProvider &&
+        other.url == url &&
+        other.scale == scale;
+  }
+
+  @override
+  int get hashCode => Object.hash(url, scale);
+
+  @override
+  String toString() =>
+      '${objectRuntimeType(this, 'NetworkImage')}("$url", scale: $scale)';
 }
