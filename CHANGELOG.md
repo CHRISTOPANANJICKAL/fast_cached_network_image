@@ -23,3 +23,6 @@
 * Added method to clear a given image from cache
 * Added method to check whether a given image exist in cache
 * Updated loadingBuilder function with the download progress data 
+
+## 1.0.1
+* Version 1 release
