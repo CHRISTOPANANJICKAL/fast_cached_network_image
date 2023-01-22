@@ -513,9 +513,6 @@ class FastCachedImageProvider extends ImageProvider<NetworkImage>
   @override
   ImageStreamCompleter loadBuffer(
       NetworkImage key, DecoderBufferCallback decode) {
-    // Ownership of this controller is handed off to [_loadAsync]; it is that
-    // method's responsibility to close the controller's stream when the image
-    // has been loaded or an error is thrown.
     final StreamController<ImageChunkEvent> chunkEvents =
         StreamController<ImageChunkEvent>();
 
@@ -531,24 +528,6 @@ class FastCachedImageProvider extends ImageProvider<NetworkImage>
     );
   }
 
-  // Do not access this field directly; use [_httpClient] instead.
-  // We set `autoUncompress` to false to ensure that we can trust the value of
-  // the `Content-Length` HTTP header. We automatically uncompress the content
-  // in our call to [consolidateHttpClientResponseBytes].
-  static final HttpClient _sharedHttpClient = HttpClient()
-    ..autoUncompress = false;
-
-  static HttpClient get _httpClient {
-    HttpClient client = _sharedHttpClient;
-    assert(() {
-      if (debugNetworkImageHttpClientProvider != null) {
-        client = debugNetworkImageHttpClientProvider!();
-      }
-      return true;
-    }());
-    return client;
-  }
-
   Future<ui.Codec> _loadAsync(
     FastCachedImageProvider key,
     StreamController<ImageChunkEvent> chunkEvents,
@@ -556,6 +535,7 @@ class FastCachedImageProvider extends ImageProvider<NetworkImage>
   ) async {
     try {
       assert(key == this);
+      Dio dio = Dio();
       FastCachedImageConfig._checkInit();
       Uint8List? image = await FastCachedImageConfig._getImage(url);
       if (image != null) {
@@ -566,30 +546,19 @@ class FastCachedImageProvider extends ImageProvider<NetworkImage>
 
       final Uri resolved = Uri.base.resolve(key.url);
 
-      final HttpClientRequest request = await _httpClient.getUrl(resolved);
-
-      headers?.forEach((String name, String value) {
-        request.headers.add(name, value);
-      });
-      final HttpClientResponse response = await request.close();
-      if (response.statusCode != HttpStatus.ok) {
-        // The network may be only temporarily unavailable, or the file will be
-        // added on the server later. Avoid having future calls to resolve
-        // fail to check the network again.
-        await response.drain<List<int>>(<int>[]);
-        throw NetworkImageLoadException(
-            statusCode: response.statusCode, uri: resolved);
-      }
-
-      final Uint8List bytes = await consolidateHttpClientResponseBytes(
-        response,
-        onBytesReceived: (int cumulative, int? total) {
+      if (headers != null) dio.options.headers.addAll(headers!);
+      Response response = await dio.get(
+        url,
+        options: Options(responseType: ResponseType.bytes),
+        onReceiveProgress: (int received, int total) {
           chunkEvents.add(ImageChunkEvent(
-            cumulativeBytesLoaded: cumulative,
+            cumulativeBytesLoaded: received,
             expectedTotalBytes: total,
           ));
         },
       );
+
+      final Uint8List bytes = response.data;
       if (bytes.lengthInBytes == 0) {
         throw Exception('NetworkImage is an empty file: $resolved');
       }
@@ -607,7 +576,7 @@ class FastCachedImageProvider extends ImageProvider<NetworkImage>
       });
       rethrow;
     } finally {
-      chunkEvents.close();
+      await chunkEvents.close();
     }
   }
 

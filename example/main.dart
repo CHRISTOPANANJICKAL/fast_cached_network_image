@@ -34,6 +34,11 @@ class _MyAppState extends State<MyApp> {
           SizedBox(
             height: 150,
             width: 150,
+            child: Image(image: FastCachedImageProvider(url1)),
+          ),
+          SizedBox(
+            height: 150,
+            width: 150,
             child: FastCachedImage(
               url: url1,
               fit: BoxFit.cover,
