@@ -104,6 +104,13 @@ If an image had some errors while displaying, the image will be automatically re
 FastCachedImage have all other default properties such as height, width etc. provided by flutter.
 
 
+If you want to use an image from cache as image provider, use
+
+```dart
+FastCachedImageProvider(url);
+```
+
+
 ## Example
 
 ```dart
