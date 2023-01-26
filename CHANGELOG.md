@@ -25,4 +25,10 @@
 * Updated loadingBuilder function with the download progress data 
 
 ## 1.0.1
+ 
 * Version 1 release
+
+## 1.1.0
+
+* Added web support 
+* Added FastCachedImageProvider class for built in ImageProvider of flutter
