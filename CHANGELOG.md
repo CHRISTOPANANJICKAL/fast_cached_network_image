@@ -32,3 +32,7 @@
 
 * Added web support 
 * Added FastCachedImageProvider class for built in ImageProvider of flutter
+
+## 1.1.1
+
+* Added web support - Removed dart io usage
