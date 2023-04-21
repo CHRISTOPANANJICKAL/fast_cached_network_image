@@ -31,11 +31,11 @@ Use [path_provider](https://pub.dev/packages/path_provider) to set a storage loc
 ```dart
 String storageLocation = (await getApplicationDocumentsDirectory()).path;
 ```
-
+> This package uses [Hive](https://pub.dev/packages/hive_flutter) as cache container, which uses getApplicationDocumentsDirectory() to get the default path in case subDir is not specified
 
 Initialize the cache configuration
 ```dart
-await FastCachedImageConfig.init(path: storageLocation, clearCacheAfter: const Duration(days: 15));
+await FastCachedImageConfig.init(subDir: storageLocation, clearCacheAfter: const Duration(days: 15));
 ```
 The clearCacheAfter property is used to set the Duration after with the cached image will be cleared. By default its set to 7 days, which means an image cached today will be deleted when you open the app after 7 days.
 
@@ -48,30 +48,30 @@ child: FastCachedImage(url: url)
 ## Properties
 ``` dart
 errorBuilder: (context, exception, stacktrace) {
-          return Text(stacktrace.toString());
-        },
+  return Text(stacktrace.toString());
+},
 ```
 errorBuilder property needs to return a widget. This widget will be displayed if there is any error while loading the provided image.
 ``` dart
 
 loadingBuilder: (context, progress) {
-                        return Container(
-                          color: Colors.yellow,
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              if (progress.isDownloading && progress.totalBytes != null)
-                                Text('${progress.downloadedBytes ~/ 1024} / ${progress.totalBytes! ~/ 1024} kb',
-                                    style: const TextStyle(color: Colors.red)),
-                              SizedBox(
-                                  width: 120,
-                                  height: 120,
-                                  child:
-                                  CircularProgressIndicator(color: Colors.red, value: progress.progressPercentage.value)),
-                            ],
-                          ),
-                        );
-                      },
+  return Container(
+    color: Colors.yellow,
+    child: Stack(
+      alignment: Alignment.center,
+      children: [
+        if (progress.isDownloading && progress.totalBytes != null)
+          Text('${progress.downloadedBytes ~/ 1024} / ${progress.totalBytes! ~/ 1024} kb',
+              style: const TextStyle(color: Colors.red)),
+        SizedBox(
+            width: 120,
+            height: 120,
+            child:
+            CircularProgressIndicator(color: Colors.red, value: progress.progressPercentage.value)),
+      ],
+    ),
+  );
+},
 ```
 loadingBuilder property can be used to display a loading widget such as a shimmer. This widget will be displayed while the image is being downloaded and processed.
 loadingBuilder provides a progress property which can be used to display the image download progress with the size(in bytes) of the image.
