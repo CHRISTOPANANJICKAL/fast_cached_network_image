@@ -17,8 +17,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String url1 =
-      'https://storage.googleapis.com/cms-storage-bucket/d83012c34a8f88a64e2b.jpg';
+  String url1 = 'https://storage.googleapis.com/cms-storage-bucket/d83012c34a8f88a64e2b.jpg';
 
   bool isImageCached = false;
   String? log;
@@ -42,23 +41,20 @@ class _MyAppState extends State<MyApp> {
                 return Text(stacktrace.toString());
               },
               loadingBuilder: (context, progress) {
-                debugPrint(
-                    'Progress: ${progress.isDownloading} ${progress.downloadedBytes} / ${progress.totalBytes}');
+                debugPrint('Progress: ${progress.isDownloading} ${progress.downloadedBytes} / ${progress.totalBytes}');
                 return Container(
                   color: Colors.yellow,
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
                       if (progress.isDownloading && progress.totalBytes != null)
-                        Text(
-                            '${progress.downloadedBytes ~/ 1024} / ${progress.totalBytes! ~/ 1024} kb',
+                        Text('${progress.downloadedBytes ~/ 1024} / ${progress.totalBytes! ~/ 1024} kb',
                             style: const TextStyle(color: Colors.red)),
                       SizedBox(
                           width: 120,
                           height: 120,
-                          child: CircularProgressIndicator(
-                              color: Colors.red,
-                              value: progress.progressPercentage.value)),
+                          child:
+                              CircularProgressIndicator(color: Colors.red, value: progress.progressPercentage.value)),
                     ],
                   ),
                 );
@@ -66,15 +62,13 @@ class _MyAppState extends State<MyApp> {
             ),
           ),
           const SizedBox(height: 12),
-          Text('Is image cached? = $isImageCached',
-              style: const TextStyle(color: Colors.red)),
+          Text('Is image cached? = $isImageCached', style: const TextStyle(color: Colors.red)),
           const SizedBox(height: 12),
           Text(log ?? ''),
           const SizedBox(height: 120),
           MaterialButton(
             onPressed: () async {
-              setState(() => isImageCached =
-                  FastCachedImageConfig.isCached(imageUrl: url1));
+              setState(() => isImageCached = FastCachedImageConfig.isCached(imageUrl: url1));
             },
             child: const Text('check image is cached or not'),
           ),
@@ -83,8 +77,7 @@ class _MyAppState extends State<MyApp> {
             onPressed: () async {
               await FastCachedImageConfig.deleteCachedImage(imageUrl: url1);
               setState(() => log = 'deleted image $url1');
-              await Future.delayed(
-                  const Duration(seconds: 2), () => setState(() => log = null));
+              await Future.delayed(const Duration(seconds: 2), () => setState(() => log = null));
             },
             child: const Text('delete cached image'),
           ),
@@ -93,8 +86,7 @@ class _MyAppState extends State<MyApp> {
             onPressed: () async {
               await FastCachedImageConfig.clearAllCachedImages();
               setState(() => log = 'All cached images deleted');
-              await Future.delayed(
-                  const Duration(seconds: 2), () => setState(() => log = null));
+              await Future.delayed(const Duration(seconds: 2), () => setState(() => log = null));
             },
             child: const Text('delete all cached images'),
           ),

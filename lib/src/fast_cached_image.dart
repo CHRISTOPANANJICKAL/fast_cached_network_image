@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:uuid/uuid.dart';
 import 'models/fast_cache_progress_data.dart';
 import 'package:dio/dio.dart';
 
@@ -399,8 +400,16 @@ class FastCachedImageConfig {
   }
 
   static Future<Uint8List?> _getImage(String url) async {
-    if (_imageKeyBox!.keys.contains(url) && _imageBox!.keys.contains(url)) {
-      Uint8List? data = await _imageBox!.get(url);
+    final key = _keyFromUrl(url);
+    if (_imageKeyBox!.keys.contains(url) && _imageBox!.containsKey(url)) {
+      // Migrating old keys to new keys
+      await _replaceImageKey(oldKey: url, newKey: key);
+      await _replaceOldImage(
+          oldKey: url, newKey: key, image: await _imageBox!.get(url));
+    }
+
+    if (_imageKeyBox!.keys.contains(key) && _imageBox!.keys.contains(key)) {
+      Uint8List? data = await _imageBox!.get(key);
       if (data == null || data.isEmpty) return null;
 
       return data;
@@ -411,8 +420,10 @@ class FastCachedImageConfig {
 
   ///[_saveImage] is to save an image to cache. Not part of public API.
   static Future<void> _saveImage(String url, Uint8List image) async {
-    await _imageKeyBox!.put(url, DateTime.now());
-    await _imageBox!.put(url, image);
+    final key = _keyFromUrl(url);
+
+    await _imageKeyBox!.put(key, DateTime.now());
+    await _imageBox!.put(key, image);
   }
 
   ///[_clearOldCache] clears the old cache. Not part of public API.
@@ -431,15 +442,37 @@ class FastCachedImageConfig {
     }
   }
 
+  static Future<void> _replaceImageKey(
+      {required String oldKey, required String newKey}) async {
+    _checkInit();
+
+    DateTime? dateCreated = await _imageKeyBox!.get(oldKey);
+
+    if (dateCreated == null) return;
+
+    _imageKeyBox!.delete(oldKey);
+    _imageKeyBox!.put(newKey, dateCreated);
+  }
+
+  static Future<void> _replaceOldImage({
+    required String oldKey,
+    required String newKey,
+    required Uint8List image,
+  }) async {
+    await _imageBox!.delete(oldKey);
+    await _imageBox!.put(newKey, image);
+  }
+
   ///[deleteCachedImage] function takes in a image [imageUrl] and removes the image corresponding to the url
   /// from the cache if the image is present in the cache.
   static Future<void> deleteCachedImage(
       {required String imageUrl, bool showLog = true}) async {
     _checkInit();
-    if (_imageKeyBox!.keys.contains(imageUrl) &&
-        _imageBox!.keys.contains(imageUrl)) {
-      await _imageKeyBox!.delete(imageUrl);
-      await _imageBox!.delete(imageUrl);
+
+    final key = _keyFromUrl(imageUrl);
+    if (_imageKeyBox!.keys.contains(key) && _imageBox!.keys.contains(key)) {
+      await _imageKeyBox!.delete(key);
+      await _imageBox!.delete(key);
       if (showLog) {
         debugPrint('FastCacheImage: Removed image $imageUrl from cache.');
       }
@@ -458,7 +491,7 @@ class FastCachedImageConfig {
   }
 
   ///[_checkInit] method ensures the hive db is initialized. Not part of public API
-  static _checkInit() {
+  static void _checkInit() {
     if ((FastCachedImageConfig._imageKeyBox == null ||
             !FastCachedImageConfig._imageKeyBox!.isOpen) ||
         FastCachedImageConfig._imageBox == null ||
@@ -471,10 +504,14 @@ class FastCachedImageConfig {
   ///Returns true if cached, false if not.
   static bool isCached({required String imageUrl}) {
     _checkInit();
-    if (_imageKeyBox!.containsKey(imageUrl) &&
-        _imageBox!.keys.contains(imageUrl)) return true;
+
+    final key = _keyFromUrl(imageUrl);
+    if (_imageKeyBox!.containsKey(key) && _imageBox!.keys.contains(key))
+      return true;
     return false;
   }
+
+  static _keyFromUrl(String url) => const Uuid().v5(Uuid.NAMESPACE_URL, url);
 }
 
 ///[_BoxNames] contains the name of the boxes. Not part of public API
