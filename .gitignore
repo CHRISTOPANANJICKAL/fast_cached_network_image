@@ -15,11 +15,7 @@ ios/
 linux/
 macos/
 web/
-README.md
-pubspec.lock
-.metadata
-analysis_options.yaml
-test/
+
 
 # IntelliJ related
 *.iml
