@@ -36,3 +36,8 @@
 ## 1.1.1
 
 * Added web support - Removed dart io usage
+
+
+## 1.2.0
+
+* Added cache key with UID instead of image url
