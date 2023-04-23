@@ -10,10 +10,10 @@ environment:
   flutter: ">=1.17.0"
 
 dependencies:
-  dio: ^5.1.1
   flutter:
     sdk: flutter
 
+  dio: ^5.1.1
   hive_flutter: ^1.1.0
   uuid: ^3.0.7
 
