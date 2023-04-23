@@ -22,7 +22,7 @@ Use [shimmer](https://pub.dev/packages/shimmer) package to create a beautiful lo
 
 
 ## Usage
-Depend on it
+Import it
 ```dart
 import 'package:fast_cached_network_image/fast_cached_network_image.dart';
 ```
