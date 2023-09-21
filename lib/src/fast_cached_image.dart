@@ -7,10 +7,10 @@ import 'package:uuid/uuid.dart';
 import 'models/fast_cache_progress_data.dart';
 import 'package:dio/dio.dart';
 
+String _cachedUrl = "";
 class FastCachedImage extends StatefulWidget {
   ///Provide the [url] for the image to display.
   final String url;
-
   ///[errorBuilder] must return a widget. This widget will be displayed if there is any error in downloading or displaying
   ///the downloaded image
   final ImageErrorWidgetBuilder? errorBuilder;
@@ -160,6 +160,7 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       _loadAsync(widget.url);
+      _cachedUrl = widget.url;
       _animationController.addStatusListener((status) => _animationListener(status));
     });
 
@@ -184,6 +185,10 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
     if (_imageResponse?.error != null && widget.errorBuilder != null) {
       _logErrors(_imageResponse?.error);
       return widget.errorBuilder!(context, Object, StackTrace.fromString(_imageResponse!.error!));
+    }
+    if (_cachedUrl != widget.url) {
+      _cachedUrl = widget.url;
+      _loadAsync(widget.url);
     }
 
     return SizedBox(
