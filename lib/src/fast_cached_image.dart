@@ -311,7 +311,9 @@ class _FastCachedImageState extends State<FastCachedImage>
       Response response = await dio.get(url,
           options: Options(
             responseType: ResponseType.bytes,
-            headers: widget.httpHeaders?..remove(HttpHeaders.contentTypeHeader),
+            headers: widget.httpHeaders
+              ?..remove(HttpHeaders.contentTypeHeader)
+              ..remove(HttpHeaders.acceptHeader),
           ), onReceiveProgress: (int received, int total) {
         if (received < 0 || total < 0) return;
         if (widget.loadingBuilder != null) {
