@@ -225,6 +225,35 @@ class _MyAppState extends State<MyApp> {
 
 ```
 
+Feel free to contribute and support.
+
+## Contributors 🤝
+
+Big thanks go to these wonderful people:
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/CHRISTOPANANJICKAL"><img src="https://avatars.githubusercontent.com/u/58786637?v=4" width="100px;" alt=""/><br /><sub><b>Author: Christo Pananjickal</b></sub></a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/woutervanwijk"><img src="https://avatars.githubusercontent.com/u/480348?v=4" width="100px;" alt=""/><br /><sub><b>Contributor: Wouter van Wijk</b></sub></a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/MerdanDev"><img src="https://avatars.githubusercontent.com/u/70772623?v=4" width="100px;" alt=""/><br /><sub><b>Contributor: Merdan Atamyradow</b></sub></a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/stevenosse"><img src="https://avatars.githubusercontent.com/u/33069233?v=4" width="100px;" alt=""/><br /><sub><b>Contributor: Steve</b></sub></a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/suyog-patil-21"><img src="https://avatars.githubusercontent.com/u/67726767?v=4" width="100px;" alt=""/><br /><sub><b>Contributor: Suyog Patil</b></sub></a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+
+
+
 ## Package on pub.dev
 
 [fast_cached_network_image](https://pub.dev/packages/fast_cached_network_image)
