@@ -48,4 +48,8 @@
 
 ## 1.2.3
 
-* Fixed context mount issue 
+* Fixed context mount issue
+
+## 1.2.4
+
+* Added contributors to readme 
