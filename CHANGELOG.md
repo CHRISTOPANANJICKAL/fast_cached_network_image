@@ -41,3 +41,7 @@
 ## 1.2.0
 
 * Added cache key with UID instead of image url
+
+## 1.2.1
+
+* UUID and Dio updated to latest versions 
