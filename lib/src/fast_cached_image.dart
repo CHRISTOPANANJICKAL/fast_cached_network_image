@@ -24,6 +24,9 @@ class FastCachedImage extends StatefulWidget {
   ///and the actual image. Default value is 500 ms.
   final Duration fadeInDuration;
 
+  final int? cacheWidth;
+  final int? cacheHeight;
+
   /// If [cacheWidth] or [cacheHeight] are provided, it indicates to the
   /// engine that the image must be decoded at the specified size. The image
   /// will be rendered to the constraints of the layout or [width] and [height]
@@ -130,8 +133,8 @@ class FastCachedImage extends StatefulWidget {
       this.isAntiAlias = false,
       this.filterQuality = FilterQuality.low,
       this.fadeInDuration = const Duration(milliseconds: 500),
-      int? cacheWidth,
-      int? cacheHeight,
+      this.cacheWidth,
+      this.cacheHeight,
       Key? key})
       : super(key: key);
 
@@ -212,6 +215,8 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
                 height: widget.height,
                 alignment: widget.alignment,
                 key: widget.key,
+                cacheWidth: widget.cacheWidth,
+                cacheHeight: widget.cacheHeight,
                 fit: widget.fit,
                 errorBuilder: (a, c, v) {
                   if (_animationController.status != AnimationStatus.completed) {
