@@ -11,13 +11,13 @@ You can also add beautiful loaders and percentage indicators with the total and 
 
 ## Screenshots
 
-![App caching](https://github.com/CHRISTOPANANJICKAL/fast_cached_network_image/blob/main/gif%20images/fast-cache.gif)
+![App caching](https://raw.githubusercontent.com/CHRISTOPANANJICKAL/fast_cached_network_image/main/gif%20images/fast-cache.gif)
 
-![Caching with fade in animation](https://github.com/CHRISTOPANANJICKAL/fast_cached_network_image/blob/main/gif%20images/images-in-row.gif)
+![Caching with fade in animation](https://raw.githubusercontent.com/CHRISTOPANANJICKAL/fast_cached_network_image/main/gif%20images/images-in-row.gif)
 
-![Caching with progress indicator and image  size](https://github.com/CHRISTOPANANJICKAL/fast_cached_network_image/blob/main/gif%20images/fast%20cache%204.gif)
+![Caching with progress indicator and image  size](https://raw.githubusercontent.com/CHRISTOPANANJICKAL/fast_cached_network_image/main/gif%20images/fast%20cache%204.gif)
 
-![The below gif displays a 30 MB image from cache](https://github.com/CHRISTOPANANJICKAL/fast_cached_network_image/blob/main/gif%20images/image-with-shimmer.gif)
+![The below gif displays a 30 MB image from cache](https://raw.githubusercontent.com/CHRISTOPANANJICKAL/fast_cached_network_image/main/gif%20images/image-with-shimmer.gif)
 Use [shimmer](https://pub.dev/packages/shimmer) package to create a beautiful loading widget.
 
 
