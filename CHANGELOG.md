@@ -44,4 +44,8 @@
 
 ## 1.2.2
 
-* UUID and Dio updated to latest versions 
+* UUID and Dio updated to latest versions
+
+## 1.2.3
+
+* Fixed context mount issue 

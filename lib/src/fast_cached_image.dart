@@ -281,7 +281,7 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
 
       //set is downloading flag to true
       _progressData.isDownloading = true;
-      if (widget.loadingBuilder != null) {
+      if (widget.loadingBuilder != null && context.mounted) {
         widget.loadingBuilder!(context, _progressData);
       }
       Response response = await dio.get(url, options: Options(responseType: ResponseType.bytes),
@@ -293,7 +293,7 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
           double.parse((received / total).toStringAsFixed(2));
           // _progress.value = tot != null ? _downloaded / _total! : 0;
           _progressData.progressPercentage.value = double.parse((received / total).toStringAsFixed(2));
-          widget.loadingBuilder!(context, _progressData);
+          if (context.mounted) widget.loadingBuilder!(context, _progressData);
         }
 
         chunkEvents.add(ImageChunkEvent(
