@@ -142,7 +142,8 @@ class FastCachedImage extends StatefulWidget {
   State<FastCachedImage> createState() => _FastCachedImageState();
 }
 
-class _FastCachedImageState extends State<FastCachedImage> with TickerProviderStateMixin {
+class _FastCachedImageState extends State<FastCachedImage>
+    with TickerProviderStateMixin {
   ///[_imageResponse] not public API.
   _ImageResponse? _imageResponse;
 
@@ -157,22 +158,30 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
 
   @override
   void initState() {
-    _animationController = AnimationController(vsync: this, duration: widget.fadeInDuration);
-    _animation =
-        Tween<double>(begin: widget.fadeInDuration == Duration.zero ? 1 : 0, end: 1).animate(_animationController);
+    _animationController =
+        AnimationController(vsync: this, duration: widget.fadeInDuration);
+    _animation = Tween<double>(
+            begin: widget.fadeInDuration == Duration.zero ? 1 : 0, end: 1)
+        .animate(_animationController);
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       _loadAsync(widget.url);
-      _animationController.addStatusListener((status) => _animationListener(status));
+      _animationController
+          .addStatusListener((status) => _animationListener(status));
     });
 
     _progressData = FastCachedProgressData(
-        progressPercentage: ValueNotifier(0), totalBytes: null, downloadedBytes: 0, isDownloading: false);
+        progressPercentage: ValueNotifier(0),
+        totalBytes: null,
+        downloadedBytes: 0,
+        isDownloading: false);
     super.initState();
   }
 
   void _animationListener(AnimationStatus status) {
-    if (status == AnimationStatus.completed && mounted && widget.fadeInDuration != Duration.zero) setState(() => {});
+    if (status == AnimationStatus.completed &&
+        mounted &&
+        widget.fadeInDuration != Duration.zero) setState(() => {});
   }
 
   @override
@@ -186,7 +195,8 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
   Widget build(BuildContext context) {
     if (_imageResponse?.error != null && widget.errorBuilder != null) {
       _logErrors(_imageResponse?.error);
-      return widget.errorBuilder!(context, Object, StackTrace.fromString(_imageResponse!.error!));
+      return widget.errorBuilder!(
+          context, Object, StackTrace.fromString(_imageResponse!.error!));
     }
 
     return SizedBox(
@@ -219,12 +229,16 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
                 cacheHeight: widget.cacheHeight,
                 fit: widget.fit,
                 errorBuilder: (a, c, v) {
-                  if (_animationController.status != AnimationStatus.completed) {
+                  if (_animationController.status !=
+                      AnimationStatus.completed) {
                     _animationController.forward();
                     _logErrors(c);
-                    FastCachedImageConfig.deleteCachedImage(imageUrl: widget.url);
+                    FastCachedImageConfig.deleteCachedImage(
+                        imageUrl: widget.url, showLog: widget.disableErrorLogs);
                   }
-                  return widget.errorBuilder != null ? widget.errorBuilder!(a, c, v) : const SizedBox();
+                  return widget.errorBuilder != null
+                      ? widget.errorBuilder!(a, c, v)
+                      : const SizedBox();
                 },
                 centerSlice: widget.centerSlice,
                 colorBlendMode: widget.colorBlendMode,
@@ -243,13 +257,16 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
                           return widget.loadingBuilder!(
                               context,
                               FastCachedProgressData(
-                                  progressPercentage: _progressData.progressPercentage,
+                                  progressPercentage:
+                                      _progressData.progressPercentage,
                                   totalBytes: _progressData.totalBytes,
-                                  downloadedBytes: _progressData.downloadedBytes,
+                                  downloadedBytes:
+                                      _progressData.downloadedBytes,
                                   isDownloading: false));
                         }
 
-                        if (_animationController.status != AnimationStatus.completed) {
+                        if (_animationController.status !=
+                            AnimationStatus.completed) {
                           _animationController.forward();
                         }
                         return a;
@@ -270,7 +287,8 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
     if (!mounted) return;
 
     if (image != null) {
-      setState(() => _imageResponse = _ImageResponse(imageData: image, error: null));
+      setState(
+          () => _imageResponse = _ImageResponse(imageData: image, error: null));
       if (widget.loadingBuilder == null) _animationController.forward();
 
       return;
@@ -289,15 +307,17 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
       if (widget.loadingBuilder != null && context.mounted) {
         widget.loadingBuilder!(context, _progressData);
       }
-      Response response = await dio.get(url, options: Options(responseType: ResponseType.bytes),
-          onReceiveProgress: (int received, int total) {
+      Response response = await dio
+          .get(url, options: Options(responseType: ResponseType.bytes),
+              onReceiveProgress: (int received, int total) {
         if (received < 0 || total < 0) return;
         if (widget.loadingBuilder != null) {
           _progressData.downloadedBytes = received;
           _progressData.totalBytes = total;
           double.parse((received / total).toStringAsFixed(2));
           // _progress.value = tot != null ? _downloaded / _total! : 0;
-          _progressData.progressPercentage.value = double.parse((received / total).toStringAsFixed(2));
+          _progressData.progressPercentage.value =
+              double.parse((received / total).toStringAsFixed(2));
           if (context.mounted) widget.loadingBuilder!(context, _progressData);
         }
 
@@ -310,9 +330,12 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
       final Uint8List bytes = response.data;
 
       if (response.statusCode != 200) {
-        String error = NetworkImageLoadException(statusCode: response.statusCode ?? 0, uri: resolved).toString();
+        String error = NetworkImageLoadException(
+                statusCode: response.statusCode ?? 0, uri: resolved)
+            .toString();
         if (mounted) {
-          setState(() => _imageResponse = _ImageResponse(imageData: Uint8List.fromList([]), error: error));
+          setState(() => _imageResponse =
+              _ImageResponse(imageData: Uint8List.fromList([]), error: error));
         }
         return;
       }
@@ -321,18 +344,21 @@ class _FastCachedImageState extends State<FastCachedImage> with TickerProviderSt
       _progressData.isDownloading = false;
 
       if (bytes.isEmpty && mounted) {
-        setState(() => _imageResponse = _ImageResponse(imageData: bytes, error: 'Image is empty.'));
+        setState(() => _imageResponse =
+            _ImageResponse(imageData: bytes, error: 'Image is empty.'));
         return;
       }
       if (mounted) {
-        setState(() => _imageResponse = _ImageResponse(imageData: bytes, error: null));
+        setState(() =>
+            _imageResponse = _ImageResponse(imageData: bytes, error: null));
         if (widget.loadingBuilder == null) _animationController.forward();
       }
 
       await FastCachedImageConfig._saveImage(url, bytes);
     } catch (e) {
       if (mounted) {
-        setState(() => _imageResponse = _ImageResponse(imageData: Uint8List.fromList([]), error: e.toString()));
+        setState(() => _imageResponse = _ImageResponse(
+            imageData: Uint8List.fromList([]), error: e.toString()));
       }
     } finally {
       if (!chunkEvents.isClosed) await chunkEvents.close();
@@ -383,7 +409,8 @@ class FastCachedImageConfig {
     if (_imageKeyBox!.keys.contains(url) && _imageBox!.containsKey(url)) {
       // Migrating old keys to new keys
       await _replaceImageKey(oldKey: url, newKey: key);
-      await _replaceOldImage(oldKey: url, newKey: key, image: await _imageBox!.get(url));
+      await _replaceOldImage(
+          oldKey: url, newKey: key, image: await _imageBox!.get(url));
     }
 
     if (_imageKeyBox!.keys.contains(key) && _imageBox!.keys.contains(key)) {
@@ -420,7 +447,8 @@ class FastCachedImageConfig {
     }
   }
 
-  static Future<void> _replaceImageKey({required String oldKey, required String newKey}) async {
+  static Future<void> _replaceImageKey(
+      {required String oldKey, required String newKey}) async {
     _checkInit();
 
     DateTime? dateCreated = await _imageKeyBox!.get(oldKey);
@@ -442,7 +470,8 @@ class FastCachedImageConfig {
 
   ///[deleteCachedImage] function takes in a image [imageUrl] and removes the image corresponding to the url
   /// from the cache if the image is present in the cache.
-  static Future<void> deleteCachedImage({required String imageUrl, bool showLog = true}) async {
+  static Future<void> deleteCachedImage(
+      {required String imageUrl, bool showLog = true}) async {
     _checkInit();
 
     final key = _keyFromUrl(imageUrl);
@@ -468,7 +497,8 @@ class FastCachedImageConfig {
 
   ///[_checkInit] method ensures the hive db is initialized. Not part of public API
   static void _checkInit() {
-    if ((FastCachedImageConfig._imageKeyBox == null || !FastCachedImageConfig._imageKeyBox!.isOpen) ||
+    if ((FastCachedImageConfig._imageKeyBox == null ||
+            !FastCachedImageConfig._imageKeyBox!.isOpen) ||
         FastCachedImageConfig._imageBox == null ||
         !FastCachedImageConfig._imageBox!.isOpen) {
       throw Exception(_notInitMessage);
@@ -481,7 +511,8 @@ class FastCachedImageConfig {
     _checkInit();
 
     final key = _keyFromUrl(imageUrl);
-    if (_imageKeyBox!.containsKey(key) && _imageBox!.keys.contains(key)) return true;
+    if (_imageKeyBox!.containsKey(key) && _imageBox!.keys.contains(key))
+      return true;
     return false;
   }
 
@@ -499,7 +530,8 @@ class _BoxNames {
 
 /// The fast cached image implementation of [image_provider.NetworkImage].
 @immutable
-class FastCachedImageProvider extends ImageProvider<NetworkImage> implements NetworkImage {
+class FastCachedImageProvider extends ImageProvider<NetworkImage>
+    implements NetworkImage {
   /// Creates an object that fetches the image at the given URL.
   ///
   /// The arguments [url] and [scale] must not be null.
@@ -520,8 +552,10 @@ class FastCachedImageProvider extends ImageProvider<NetworkImage> implements Net
   }
 
   @override
-  ImageStreamCompleter loadBuffer(NetworkImage key, DecoderBufferCallback decode) {
-    final StreamController<ImageChunkEvent> chunkEvents = StreamController<ImageChunkEvent>();
+  ImageStreamCompleter loadBuffer(
+      NetworkImage key, DecoderBufferCallback decode) {
+    final StreamController<ImageChunkEvent> chunkEvents =
+        StreamController<ImageChunkEvent>();
 
     return MultiFrameImageStreamCompleter(
       codec: _loadAsync(key as FastCachedImageProvider, chunkEvents, decode),
@@ -546,7 +580,8 @@ class FastCachedImageProvider extends ImageProvider<NetworkImage> implements Net
       FastCachedImageConfig._checkInit();
       Uint8List? image = await FastCachedImageConfig._getImage(url);
       if (image != null) {
-        final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromUint8List(image);
+        final ui.ImmutableBuffer buffer =
+            await ui.ImmutableBuffer.fromUint8List(image);
         return decode(buffer);
       }
 
@@ -569,7 +604,8 @@ class FastCachedImageProvider extends ImageProvider<NetworkImage> implements Net
         throw Exception('NetworkImage is an empty file: $resolved');
       }
 
-      final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+      final ui.ImmutableBuffer buffer =
+          await ui.ImmutableBuffer.fromUint8List(bytes);
       await FastCachedImageConfig._saveImage(url, bytes);
       return decode(buffer);
     } catch (e) {
@@ -590,12 +626,15 @@ class FastCachedImageProvider extends ImageProvider<NetworkImage> implements Net
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    return other is FastCachedImageProvider && other.url == url && other.scale == scale;
+    return other is FastCachedImageProvider &&
+        other.url == url &&
+        other.scale == scale;
   }
 
   @override
   int get hashCode => Object.hash(url, scale);
 
   @override
-  String toString() => '${objectRuntimeType(this, 'NetworkImage')}("$url", scale: $scale)';
+  String toString() =>
+      '${objectRuntimeType(this, 'NetworkImage')}("$url", scale: $scale)';
 }
