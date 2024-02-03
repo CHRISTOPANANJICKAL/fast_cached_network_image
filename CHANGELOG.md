@@ -52,4 +52,8 @@
 
 ## 1.2.4
 
-* Added contributors to readme 
+* Added contributors to readme
+
+## 1.2.5
+
+* Fix: logging even when log is disabled when image is deleted 
