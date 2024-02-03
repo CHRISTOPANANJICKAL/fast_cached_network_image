@@ -56,4 +56,8 @@
 
 ## 1.2.5
 
-* Fix: logging even when log is disabled when image is deleted 
+* Fix: logging even when log is disabled when image is deleted
+
+## 1.2.6
+
+* Changed disableErrorLog parameter to showErrorLog 
