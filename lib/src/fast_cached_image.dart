@@ -105,8 +105,8 @@ class FastCachedImage extends StatefulWidget {
   ///[isAntiAlias] property in Flutter memory image.
   final bool isAntiAlias;
 
-  ///[disableErrorLogs] can be set to true if you want to ignore error logs from the widget
-  final bool disableErrorLogs;
+  ///[showErrorLog] can be set to true if you want to ignore error logs from the widget
+  final bool showErrorLog;
 
   ///[FastCachedImage] creates a widget to display network images. This widget downloads the network image
   ///when this widget is build for the first time. Later whenever this widget is called the image will be displayed from
@@ -118,7 +118,7 @@ class FastCachedImage extends StatefulWidget {
       this.semanticLabel,
       this.loadingBuilder,
       this.excludeFromSemantics = false,
-      this.disableErrorLogs = false,
+      this.showErrorLog = true,
       this.width,
       this.height,
       this.color,
@@ -234,7 +234,7 @@ class _FastCachedImageState extends State<FastCachedImage>
                     _animationController.forward();
                     _logErrors(c);
                     FastCachedImageConfig.deleteCachedImage(
-                        imageUrl: widget.url, showLog: widget.disableErrorLogs);
+                        imageUrl: widget.url, showLog: widget.showErrorLog);
                   }
                   return widget.errorBuilder != null
                       ? widget.errorBuilder!(a, c, v)
@@ -366,7 +366,7 @@ class _FastCachedImageState extends State<FastCachedImage>
   }
 
   void _logErrors(dynamic object) {
-    if (!widget.disableErrorLogs) {
+    if (widget.showErrorLog) {
       debugPrint('$object - Image url : ${widget.url}');
     }
   }
@@ -511,8 +511,9 @@ class FastCachedImageConfig {
     _checkInit();
 
     final key = _keyFromUrl(imageUrl);
-    if (_imageKeyBox!.containsKey(key) && _imageBox!.keys.contains(key))
+    if (_imageKeyBox!.containsKey(key) && _imageBox!.keys.contains(key)) {
       return true;
+    }
     return false;
   }
 
