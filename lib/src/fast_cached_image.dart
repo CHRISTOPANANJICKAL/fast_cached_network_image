@@ -11,6 +11,9 @@ class FastCachedImage extends StatefulWidget {
   ///Provide the [url] for the image to display.
   final String url;
 
+  ///Provide the [headers] for the image to display.
+  final Map<String, dynamic>? headers;
+
   ///[errorBuilder] must return a widget. This widget will be displayed if there is any error in downloading or displaying
   ///the downloaded image
   final ImageErrorWidgetBuilder? errorBuilder;
@@ -113,6 +116,7 @@ class FastCachedImage extends StatefulWidget {
   ///the downloaded database instead of the network. This can avoid unnecessary downloads and load images much faster.
   const FastCachedImage(
       {required this.url,
+      this.headers,
       this.scale = 1.0,
       this.errorBuilder,
       this.semanticLabel,
@@ -165,7 +169,7 @@ class _FastCachedImageState extends State<FastCachedImage>
         .animate(_animationController);
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      _loadAsync(widget.url);
+      _loadAsync(widget.url, widget.headers);
       _animationController
           .addStatusListener((status) => _animationListener(status));
     });
@@ -280,7 +284,7 @@ class _FastCachedImageState extends State<FastCachedImage>
   }
 
   ///[_loadAsync] Not public API.
-  Future<void> _loadAsync(url) async {
+  Future<void> _loadAsync(String url, Map<String, dynamic>? headers) async {
     FastCachedImageConfig._checkInit();
     Uint8List? image = await FastCachedImageConfig._getImage(url);
 
@@ -307,9 +311,9 @@ class _FastCachedImageState extends State<FastCachedImage>
       if (widget.loadingBuilder != null && context.mounted) {
         widget.loadingBuilder!(context, _progressData);
       }
-      Response response = await dio
-          .get(url, options: Options(responseType: ResponseType.bytes),
-              onReceiveProgress: (int received, int total) {
+      Response response = await dio.get(url,
+          options: Options(responseType: ResponseType.bytes, headers: headers),
+          onReceiveProgress: (int received, int total) {
         if (received < 0 || total < 0) return;
         if (widget.loadingBuilder != null) {
           _progressData.downloadedBytes = received;

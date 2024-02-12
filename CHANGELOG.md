@@ -60,4 +60,8 @@
 
 ## 1.2.6
 
-* Changed disableErrorLog parameter to showErrorLog 
+* Changed disableErrorLog parameter to showErrorLog
+
+## 1.2.7
+
+* Added headers for the API 
