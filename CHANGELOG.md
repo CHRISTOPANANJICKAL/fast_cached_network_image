@@ -65,3 +65,7 @@
 ## 1.2.7
 
 * Added headers for the API 
+
+## 1.2.8
+
+* Fixed state not available issue
