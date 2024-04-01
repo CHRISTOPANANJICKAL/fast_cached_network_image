@@ -69,3 +69,7 @@
 ## 1.2.8
 
 * Fixed state not available issue
+ 
+* ## 1.2.9
+
+* Added tags
