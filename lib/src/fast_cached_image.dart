@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:ui' as ui;
+
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
+
 import 'models/fast_cache_progress_data.dart';
-import 'package:dio/dio.dart';
 
 class FastCachedImage extends StatefulWidget {
   ///Provide the [url] for the image to display.
@@ -519,6 +521,17 @@ class FastCachedImageConfig {
       return true;
     }
     return false;
+  }
+
+  ///[getCachedDate] returns the date when the image was cached. If the image is not cached, it returns null.
+  static Future<DateTime?> getCachedDate({required String imageUrl}) async {
+    _checkInit();
+
+    final key = _keyFromUrl(imageUrl);
+    if (_imageKeyBox!.containsKey(key)) {
+      return await _imageKeyBox!.get(key);
+    }
+    return null;
   }
 
   static _keyFromUrl(String url) => const Uuid().v5(Uuid.NAMESPACE_URL, url);
