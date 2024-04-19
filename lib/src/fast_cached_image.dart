@@ -523,7 +523,7 @@ class FastCachedImageConfig {
     return false;
   }
 
-  ///[cachedDate] returns the date when the image was cached. If the image is not cached, it returns null.
+  ///[getCachedDate] returns the date when the image was cached. If the image is not cached, it returns null.
   static Future<DateTime?> getCachedDate({required String imageUrl}) async {
     _checkInit();
 
