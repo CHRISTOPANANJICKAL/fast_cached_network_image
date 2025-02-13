@@ -642,4 +642,7 @@ class FastCachedImageProvider extends ImageProvider<NetworkImage>
   @override
   String toString() =>
       '${objectRuntimeType(this, 'NetworkImage')}("$url", scale: $scale)';
+
+  @override
+  WebHtmlElementStrategy get webHtmlElementStrategy => WebHtmlElementStrategy.never;
 }
