@@ -14,9 +14,10 @@ class FastCachedProgressData {
   bool isDownloading;
 
   ///[FastCachedProgressData] has the data representing the download progress and total size of the image.
-  FastCachedProgressData(
-      {required this.progressPercentage,
-      required this.totalBytes,
-      required this.downloadedBytes,
-      required this.isDownloading});
+  FastCachedProgressData({
+    required this.progressPercentage,
+    required this.totalBytes,
+    required this.downloadedBytes,
+    required this.isDownloading,
+  });
 }
