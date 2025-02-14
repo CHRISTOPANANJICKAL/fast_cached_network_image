@@ -74,7 +74,7 @@
 
 * Added tags
 
-* ## 1.3.1
+* ## 1.3.1+3
 
 * Removed FVM
 * Switch hive to hive_ce
