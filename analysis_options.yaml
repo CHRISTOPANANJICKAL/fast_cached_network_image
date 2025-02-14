@@ -1,4 +1,32 @@
 include: package:flutter_lints/flutter.yaml
 
-# Additional information about this file can be found at
-# https://dart.dev/guides/language/analysis-options
+linter:
+  rules:
+    avoid_empty_else: true
+    avoid_dynamic_calls: false
+    avoid_types_as_parameter_names: true
+    comment_references: true
+    prefer_single_quotes: true
+    prefer_expression_function_bodies: false
+    prefer_final_in_for_each: true
+    prefer_if_elements_to_conditional_expressions: true
+    avoid_classes_with_only_static_members: false
+    parameter_assignments: false
+    prefer_constructors_over_static_methods: false
+    use_setters_to_change_properties: false
+    require_trailing_commas: true
+    avoid_relative_lib_imports: true
+    prefer_relative_imports: false
+
+
+
+
+
+analyzer:
+  language:
+    strict-casts: false
+
+  exclude:
+    - '**/*.g.dart'
+    - '**/*.gr.dart'
+    - '**/*.freezed.dart'
